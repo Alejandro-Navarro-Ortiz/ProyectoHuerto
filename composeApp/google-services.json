@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1016755821754",
+    "project_id": "proyecto-huerto-e49af",
+    "storage_bucket": "proyecto-huerto-e49af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016755821754:android:726fd4b1ad74b32fb33683",
+        "android_client_info": {
+          "package_name": "com.example.proyecto_huerto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1016755821754-oacuh4kov8ii7i2e0oqi8i2hm33gnpki.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.proyecto_huerto",
+            "certificate_hash": "10a315bcdfe8b5603ebe16eb99e5ef98691368cc"
+          }
+        },
+        {
+          "client_id": "1016755821754-v345n8fvct7geb3ft2pjv0d3ocks3dnf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEPnywuBS0rOtyDqhMhDlIYYeIFX1ajZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1016755821754-v345n8fvct7geb3ft2pjv0d3ocks3dnf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
