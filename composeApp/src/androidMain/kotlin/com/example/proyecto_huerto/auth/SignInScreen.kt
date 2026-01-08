@@ -1,5 +1,6 @@
 package com.example.proyecto_huerto.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,9 +25,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.proyecto_huerto.SignInState
+import com.example.proyecto_huerto.R
 
 @Composable
 fun SignInScreen(
@@ -43,7 +47,11 @@ fun SignInScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // TODO: Añade aquí tu logo
+        Image(
+            painter = painterResource(id = R.drawable.fotologo),
+            contentDescription = "Huerto Logo",
+            modifier = Modifier.size(94.dp)
+        )
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(text = "Proyecto Huerto", style = MaterialTheme.typography.headlineMedium)
@@ -89,7 +97,12 @@ fun SignInScreen(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // TODO: Añade el logo de Google
+                Image(
+                    painter = painterResource(id = R.drawable.ic_google_logo),
+                    contentDescription = "Google Logo",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Sign in with Google")
             }
         }

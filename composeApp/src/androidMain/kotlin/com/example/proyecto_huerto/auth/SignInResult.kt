@@ -1,4 +1,4 @@
-package com.example.proyecto_huerto
+package com.example.proyecto_huerto.auth
 
 data class SignInResult(
     val data: UserData?,
