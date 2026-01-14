@@ -78,7 +78,6 @@ fun AppNavHost(
             }
 
             SignInScreen(
-                state = state,
                 onSignInClick = {
                     lifecycleScope.launch {
                         val signInIntentSender = googleAuthUiClient.signIn()

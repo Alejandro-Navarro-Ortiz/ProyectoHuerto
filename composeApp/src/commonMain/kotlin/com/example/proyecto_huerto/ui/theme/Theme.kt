@@ -15,36 +15,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 1. Define tus paletas de colores para el modo claro y oscuro.
-// Puedes personalizar estos colores usando un generador online como: https://m3.material.io/theme-builder
+private val VerdePrincipal = Color(0xFF2C5E2C) // Un verde más oscuro y sereno
+private val VerdeSecundario = Color(0xFF5A8E5A)
+private val MarronTierra = Color(0xFF8B4513)
+private val AmarilloSol = Color(0xFFFFFACD)
+private val NegroTransparente = Color(0x99000000) // Negro con transparencia para superposiciones
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF4CAF50),      // Verde principal
-    secondary = Color(0xFF8BC34A),    // Verde más claro
-    tertiary = Color(0xFFCDDC39),     // Lima
-    background = Color(0xFFF5F5F5),   // Fondo gris claro
-    surface = Color(0xFFFFFFFF),      // Superficie blanca (para Cards, etc.)
+    primary = VerdeSecundario,
     onPrimary = Color.White,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
+    primaryContainer = VerdePrincipal,
+    onPrimaryContainer = Color.White,
+    secondary = MarronTierra,
+    onSecondary = Color.White,
+    tertiary = Color(0xFFC2B280),
+    background = VerdePrincipal, // Fondo verde oscuro
+    onBackground = Color.White,
+    surface = AmarilloSol, // Superficies como tarjetas en un tono claro
+    onSurface = Color.Black,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF8BC34A),      // Verde claro para modo oscuro
-    secondary = Color(0xFFCDDC39),    // Lima
-    tertiary = Color(0xFFAED581),     // Verde pálido
-    background = Color(0xFF121212),   // Fondo oscuro estándar
-    surface = Color(0xFF1E1E1E),      // Superficie ligeramente más clara
+    primary = VerdeSecundario,
     onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black,
+    primaryContainer = VerdePrincipal,
+    onPrimaryContainer = Color.White,
+    secondary = Color(0xFFC2B280), 
+    tertiary = Color(0xFF4682B4), 
+    background = Color(0xFF121212), // Fondo negro para el modo oscuro
     onBackground = Color(0xFFE6E1E5),
+    surface = Color(0xFF2E2E2E),
     onSurface = Color(0xFFE6E1E5),
 )
 
-// 2. Define la tipografía (opcional, puedes usar la de por defecto)
 private val AppTypography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
@@ -53,17 +56,14 @@ private val AppTypography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     )
-    /* Puedes definir más estilos aquí: titleLarge, labelSmall, etc. */
 )
 
-// 3. Define las formas de los componentes (opcional)
 private val AppShapes = Shapes(
     small = RoundedCornerShape(4.dp),
     medium = RoundedCornerShape(8.dp),
     large = RoundedCornerShape(16.dp)
 )
 
-// 4. Esta es la función principal que usarás en tu aplicación
 @Composable
 fun ProyectoHuertoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

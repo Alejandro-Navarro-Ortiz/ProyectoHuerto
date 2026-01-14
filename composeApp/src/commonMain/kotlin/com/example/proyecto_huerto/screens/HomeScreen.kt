@@ -13,19 +13,21 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material.icons.outlined.BugReport
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.Lightbulb
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Yard
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Yard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,12 +48,12 @@ data class HomeItem(
 @Composable
 fun HomeScreen(onNavigate: (String) -> Unit) {
     val items = listOf(
-        HomeItem("Mis Bancales", Icons.Outlined.Yard, "gestion_bancales"),
-        HomeItem("Diario de Cultivo", Icons.Outlined.Book, "diario_cultivo"),
-        HomeItem("Calendario", Icons.Outlined.CalendarToday, "calendario"),
-        HomeItem("Plagas", Icons.Outlined.BugReport, "plagas"),
-        HomeItem("Consejos", Icons.Outlined.Lightbulb, "consejos"),
-        HomeItem("Tareas", Icons.Outlined.Checklist, "tareas")
+        HomeItem("Mis Bancales", Icons.Filled.Yard, "gestion_bancales"),
+        HomeItem("Diario de Cultivo", Icons.Filled.Book, "diario_cultivo"),
+        HomeItem("Calendario", Icons.Filled.CalendarToday, "calendario"),
+        HomeItem("Plagas", Icons.Filled.BugReport, "plagas"),
+        HomeItem("Consejos", Icons.Filled.Lightbulb, "consejos"),
+        HomeItem("Tareas", Icons.Filled.Checklist, "tareas")
     )
 
     Scaffold(
@@ -65,25 +67,28 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 actions = {
                     IconButton(onClick = { onNavigate("profile") }) {
                         Icon(
-                            imageVector = Icons.Outlined.Person,
-                            contentDescription = "Mi Perfil"
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = "Mi Perfil",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
             )
         }
     ) { paddingValues ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(items) { item ->
-                HomeItemCard(item = item, onClick = { onNavigate(item.route) })
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(items) { item ->
+                    HomeItemCard(item = item, onClick = { onNavigate(item.route) })
+                }
             }
         }
     }
@@ -91,10 +96,15 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
 @Composable
 fun HomeItemCard(item: HomeItem, onClick: () -> Unit) {
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .aspectRatio(1f)
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -104,13 +114,15 @@ fun HomeItemCard(item: HomeItem, onClick: () -> Unit) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.title,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(56.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = item.title,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
