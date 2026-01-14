@@ -22,6 +22,7 @@ import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.GestionBancalesScreen
 import com.example.proyecto_huerto.screens.BancalViewModel
+import com.example.proyecto_huerto.screens.HomeScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -38,7 +39,7 @@ fun AppNavHost(
 
             LaunchedEffect(key1 = Unit) {
                 if(googleAuthUiClient.getSignedInUser() != null) {
-                    navController.navigate("gestion_bancales") {
+                    navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                 }
@@ -62,7 +63,7 @@ fun AppNavHost(
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if(state.isSignInSuccessful) {
                     Toast.makeText(context, "Inicio de sesión correcto", Toast.LENGTH_LONG).show()
-                    navController.navigate("gestion_bancales") {
+                    navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                     signInViewModel.resetState()
@@ -106,7 +107,7 @@ fun AppNavHost(
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
                     Toast.makeText(context, "Registro completado", Toast.LENGTH_LONG).show()
-                    navController.navigate("gestion_bancales") {
+                    navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                     signInViewModel.resetState()
@@ -131,6 +132,12 @@ fun AppNavHost(
             )
         }
 
+        composable("home") { 
+            HomeScreen { route ->
+                navController.navigate(route)
+            }
+        }
+
         composable("gestion_bancales") {
             val bancalViewModel = viewModel<BancalViewModel>()
             val bancales by bancalViewModel.bancales.collectAsState()
@@ -140,8 +147,8 @@ fun AppNavHost(
                 onAddBancal = { nombre -> bancalViewModel.addBancal(nombre) },
                 onNavigate = { screen ->
                     if (screen == "Perfil") navController.navigate("profile")
-                    if (screen == "Inicio") navController.navigate("gestion_bancales") {
-                        popUpTo("gestion_bancales") { inclusive = true }
+                    if (screen == "Inicio") navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
                     }
                 }
             )
