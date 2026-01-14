@@ -58,6 +58,40 @@ class GoogleAuthUiClient(
         }
     }
 
+    // --- NUEVOS MÉTODOS PARA EMAIL/PASSWORD ---
+    
+    suspend fun signInWithEmail(email: String, password: String): SignInResult {
+        return try {
+            val result = auth.signInWithEmailAndPassword(email, password).await()
+            SignInResult(
+                data = result.user?.let {
+                    UserData(it.uid, it.displayName ?: it.email, it.photoUrl?.toString())
+                },
+                errorMessage = null
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            SignInResult(null, e.message)
+        }
+    }
+
+    suspend fun signUpWithEmail(email: String, password: String): SignInResult {
+        return try {
+            val result = auth.createUserWithEmailAndPassword(email, password).await()
+            SignInResult(
+                data = result.user?.let {
+                    UserData(it.uid, it.displayName ?: it.email, it.photoUrl?.toString())
+                },
+                errorMessage = null
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            SignInResult(null, e.message)
+        }
+    }
+
+    // ------------------------------------------
+
     suspend fun signOut() {
         try {
             oneTapClient.signOut().await()

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1016755821754-b5irplsip9i0pqs0562brns82ui3s3pn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.proyecto_huerto",
+            "certificate_hash": "d0a2428bd63a1b8daca9f13d5accbb86c4750284"
+          }
+        },
+        {
           "client_id": "1016755821754-oacuh4kov8ii7i2e0oqi8i2hm33gnpki.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

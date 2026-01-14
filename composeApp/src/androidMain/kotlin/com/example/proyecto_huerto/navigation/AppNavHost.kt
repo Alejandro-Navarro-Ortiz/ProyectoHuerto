@@ -20,6 +20,8 @@ import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
+import com.example.proyecto_huerto.screens.GestionBancalesScreen
+import com.example.proyecto_huerto.models.Bancal
 import kotlinx.coroutines.launch
 
 @Composable
@@ -36,7 +38,9 @@ fun AppNavHost(
 
             LaunchedEffect(key1 = Unit) {
                 if(googleAuthUiClient.getSignedInUser() != null) {
-                    navController.navigate("profile")
+                    navController.navigate("gestion_bancales") {
+                        popUpTo("sign_in") { inclusive = true }
+                    }
                 }
             }
 
@@ -57,25 +61,17 @@ fun AppNavHost(
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if(state.isSignInSuccessful) {
-                    Toast.makeText(
-                        context,
-                        "Sign in successful",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    navController.navigate("profile")
+                    Toast.makeText(context, "Inicio de sesión correcto", Toast.LENGTH_LONG).show()
+                    navController.navigate("gestion_bancales") {
+                        popUpTo("sign_in") { inclusive = true }
+                    }
                     viewModel.resetState()
                 }
             }
 
             LaunchedEffect(key1 = state.signInError) {
-                state.signInError?.let {
-                    error ->
-                    Toast.makeText(
-                        context,
-                        error,
-                        Toast.LENGTH_LONG
-                    ).show()
+                state.signInError?.let { error ->
+                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                     viewModel.clearError()
                 }
             }
@@ -92,13 +88,16 @@ fun AppNavHost(
                         )
                     }
                 },
-                onLoginClick = {
-                    email, password ->
-                    viewModel.signInWithEmailAndPassword(email, password)
+                onLoginClick = { email, password ->
+                    lifecycleScope.launch {
+                        val result = googleAuthUiClient.signInWithEmail(email, password)
+                        viewModel.onSignInResult(result)
+                    }
                 },
                 onNavigateToSignUp = { navController.navigate("sign_up") }
             )
         }
+        
         composable("sign_up") {
             val viewModel = viewModel<SignInViewModel>()
             val state by viewModel.state.collectAsState()
@@ -106,34 +105,45 @@ fun AppNavHost(
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
-                    Toast.makeText(
-                        context,
-                        "Registro completado. Por favor, inicie sesión.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    navController.popBackStack()
+                    Toast.makeText(context, "Registro completado", Toast.LENGTH_LONG).show()
+                    navController.navigate("gestion_bancales") {
+                        popUpTo("sign_in") { inclusive = true }
+                    }
                     viewModel.resetState()
                 }
             }
 
             LaunchedEffect(key1 = state.signInError) {
-                state.signInError?.let {
-                    error ->
-                    Toast.makeText(
-                        context,
-                        error,
-                        Toast.LENGTH_LONG
-                    ).show()
+                state.signInError?.let { error ->
+                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                     viewModel.clearError()
                 }
             }
 
             SignUpScreen(
-                onSignUpClick = {
-                    email, password ->
-                    viewModel.signUpWithEmailAndPassword(email, password)
+                onSignUpClick = { email, password ->
+                    lifecycleScope.launch {
+                        val result = googleAuthUiClient.signUpWithEmail(email, password)
+                        viewModel.onSignInResult(result)
+                    }
                 },
                 onNavigateToSignIn = { navController.popBackStack() }
+            )
+        }
+
+        composable("gestion_bancales") {
+            val bancalesDeEjemplo = listOf(
+                Bancal("1", "Bancal Principal", emptyList(), ""),
+                Bancal("2", "Jardineras", emptyList(), ""),
+                Bancal("3", "Huerto Urbano", emptyList(), "")
+            )
+            
+            GestionBancalesScreen(
+                bancales = bancalesDeEjemplo,
+                onAddBancal = { /* TODO */ },
+                onNavigate = { screen ->
+                    if (screen == "Perfil") navController.navigate("profile")
+                }
             )
         }
 
@@ -144,13 +154,10 @@ fun AppNavHost(
                 onSignOut = {
                     lifecycleScope.launch {
                         googleAuthUiClient.signOut()
-                        Toast.makeText(
-                            context,
-                            "Signed out",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        navController.popBackStack()
+                        Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_LONG).show()
+                        navController.navigate("sign_in") {
+                            popUpTo(0)
+                        }
                     }
                 }
             )

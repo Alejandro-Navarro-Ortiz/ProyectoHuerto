@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
+import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.navigation.AppNavHost
 import com.google.android.gms.auth.api.identity.Identity
 
@@ -19,6 +20,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // Aquí podrías envolverlo en tu ProyectoHuertoTheme si lo deseas
             AppNavHost(
                 googleAuthUiClient = googleAuthUiClient,
                 lifecycleScope = lifecycleScope
