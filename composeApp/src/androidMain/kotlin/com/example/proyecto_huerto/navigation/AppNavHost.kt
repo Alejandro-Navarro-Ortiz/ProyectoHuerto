@@ -21,7 +21,7 @@ import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.GestionBancalesScreen
-import com.example.proyecto_huerto.models.Bancal
+import com.example.proyecto_huerto.screens.BancalViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -32,8 +32,8 @@ fun AppNavHost(
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "sign_in") {
         composable("sign_in") {
-            val viewModel = viewModel<SignInViewModel>()
-            val state by viewModel.state.collectAsState()
+            val signInViewModel = viewModel<SignInViewModel>()
+            val state by signInViewModel.state.collectAsState()
             val context = LocalContext.current
 
             LaunchedEffect(key1 = Unit) {
@@ -53,7 +53,7 @@ fun AppNavHost(
                             val signInResult = googleAuthUiClient.signInWithIntent(
                                 intent = result.data ?: return@launch
                             )
-                            viewModel.onSignInResult(signInResult)
+                            signInViewModel.onSignInResult(signInResult)
                         }
                     }
                 }
@@ -65,14 +65,14 @@ fun AppNavHost(
                     navController.navigate("gestion_bancales") {
                         popUpTo("sign_in") { inclusive = true }
                     }
-                    viewModel.resetState()
+                    signInViewModel.resetState()
                 }
             }
 
             LaunchedEffect(key1 = state.signInError) {
                 state.signInError?.let { error ->
                     Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    viewModel.clearError()
+                    signInViewModel.clearError()
                 }
             }
 
@@ -91,7 +91,7 @@ fun AppNavHost(
                 onLoginClick = { email, password ->
                     lifecycleScope.launch {
                         val result = googleAuthUiClient.signInWithEmail(email, password)
-                        viewModel.onSignInResult(result)
+                        signInViewModel.onSignInResult(result)
                     }
                 },
                 onNavigateToSignUp = { navController.navigate("sign_up") }
@@ -99,8 +99,8 @@ fun AppNavHost(
         }
         
         composable("sign_up") {
-            val viewModel = viewModel<SignInViewModel>()
-            val state by viewModel.state.collectAsState()
+            val signInViewModel = viewModel<SignInViewModel>()
+            val state by signInViewModel.state.collectAsState()
             val context = LocalContext.current
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
@@ -109,14 +109,14 @@ fun AppNavHost(
                     navController.navigate("gestion_bancales") {
                         popUpTo("sign_in") { inclusive = true }
                     }
-                    viewModel.resetState()
+                    signInViewModel.resetState()
                 }
             }
 
             LaunchedEffect(key1 = state.signInError) {
                 state.signInError?.let { error ->
                     Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    viewModel.clearError()
+                    signInViewModel.clearError()
                 }
             }
 
@@ -124,7 +124,7 @@ fun AppNavHost(
                 onSignUpClick = { email, password ->
                     lifecycleScope.launch {
                         val result = googleAuthUiClient.signUpWithEmail(email, password)
-                        viewModel.onSignInResult(result)
+                        signInViewModel.onSignInResult(result)
                     }
                 },
                 onNavigateToSignIn = { navController.popBackStack() }
@@ -132,17 +132,17 @@ fun AppNavHost(
         }
 
         composable("gestion_bancales") {
-            val bancalesDeEjemplo = listOf(
-                Bancal("1", "Bancal Principal", emptyList(), ""),
-                Bancal("2", "Jardineras", emptyList(), ""),
-                Bancal("3", "Huerto Urbano", emptyList(), "")
-            )
+            val bancalViewModel = viewModel<BancalViewModel>()
+            val bancales by bancalViewModel.bancales.collectAsState()
             
             GestionBancalesScreen(
-                bancales = bancalesDeEjemplo,
-                onAddBancal = { /* TODO */ },
+                bancales = bancales,
+                onAddBancal = { nombre -> bancalViewModel.addBancal(nombre) },
                 onNavigate = { screen ->
                     if (screen == "Perfil") navController.navigate("profile")
+                    if (screen == "Inicio") navController.navigate("gestion_bancales") {
+                        popUpTo("gestion_bancales") { inclusive = true }
+                    }
                 }
             )
         }
