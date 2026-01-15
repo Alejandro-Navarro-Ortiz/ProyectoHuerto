@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -22,10 +23,7 @@ import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
-import com.example.proyecto_huerto.screens.GestionBancalesScreen
-import com.example.proyecto_huerto.screens.DetalleBancalScreen
-import com.example.proyecto_huerto.screens.BancalViewModel
-import com.example.proyecto_huerto.screens.HomeScreen
+import com.example.proyecto_huerto.screens.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -35,6 +33,7 @@ fun AppNavHost(
 ) {
     val navController = rememberNavController()
     val bancalViewModel: BancalViewModel = viewModel()
+    val diarioViewModel: DiarioViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "sign_in") {
         composable("sign_in") {
@@ -132,7 +131,7 @@ fun AppNavHost(
             GestionBancalesScreen(
                 bancales = bancales,
                 onAddBancal = { nombre, ancho, largo -> bancalViewModel.addBancal(nombre, ancho, largo) },
-                onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) }, 
+                onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) },
                 onNavigate = { screen ->
                     if (screen == "Perfil") navController.navigate("profile")
                     if (screen == "Inicio") navController.navigate("home") {
@@ -162,6 +161,13 @@ fun AppNavHost(
             }
         }
 
+        composable("diario_cultivo") {
+            DiarioScreen(
+                viewModel = diarioViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("profile") {
              ProfileScreen(
                 userData = googleAuthUiClient.getSignedInUser(),
@@ -171,7 +177,7 @@ fun AppNavHost(
                         navController.navigate("sign_in") { popUpTo(0) }
                     }
                 },
-                onBack = { navController.popBackStack() } // Añade esto
+                onBack = { navController.popBackStack() }
             )
         }
     }
