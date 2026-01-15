@@ -78,25 +78,15 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    fun updateBancal(updatedBancal: Bancal) {
-        val user = auth.currentUser ?: return
-        viewModelScope.launch {
-            try {
-                db.collection("usuarios").document(user.uid).collection("bancales")
-                    .document(updatedBancal.id)
-                    .set(updatedBancal)
-            } catch (e: Exception) {
-                println("ERROR AL ACTUALIZAR: ${e.message}")
-            }
-        }
-    }
-
-    fun updateCultivo(bancal: Bancal, posicion: String, hortaliza: String) {
+    // Función optimizada para actualizar múltiples cultivos a la vez
+    fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortaliza: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
-                nuevosCultivos[posicion] = hortaliza
+                posiciones.forEach {
+                    nuevosCultivos[it] = hortaliza
+                }
 
                 val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
 
@@ -110,7 +100,6 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    // Nuevo método para eliminar un bancal
     fun deleteBancal(bancalId: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {

@@ -132,7 +132,7 @@ fun AppNavHost(
             GestionBancalesScreen(
                 bancales = bancales,
                 onAddBancal = { nombre, ancho, largo -> bancalViewModel.addBancal(nombre, ancho, largo) },
-                onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) },
+                onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) }, 
                 onNavigate = { screen ->
                     if (screen == "Perfil") navController.navigate("profile")
                     if (screen == "Inicio") navController.navigate("home") {
@@ -147,7 +147,6 @@ fun AppNavHost(
             route = "detalle_bancal/{bancalId}",
             arguments = listOf(navArgument("bancalId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // ¡Este es el cambio clave! Recolectamos el estado aquí.
             val bancales by bancalViewModel.bancales.collectAsState()
             val id = backStackEntry.arguments?.getString("bancalId")
             val bancal = id?.let { bancalId -> bancales.find { it.id == bancalId } }
@@ -156,15 +155,15 @@ fun AppNavHost(
                 DetalleBancalScreen(
                     bancal = bancal,
                     onBack = { navController.popBackStack() },
-                    onUpdateCultivo = { posicion, hortaliza ->
-                        bancalViewModel.updateCultivo(bancal, posicion, hortaliza)
+                    onUpdateCultivos = { posiciones, hortaliza ->
+                        bancalViewModel.updateCultivos(bancal, posiciones, hortaliza)
                     }
                 )
             }
         }
 
         composable("profile") {
-            ProfileScreen(
+             ProfileScreen(
                 userData = googleAuthUiClient.getSignedInUser(),
                 onSignOut = {
                     lifecycleScope.launch {
