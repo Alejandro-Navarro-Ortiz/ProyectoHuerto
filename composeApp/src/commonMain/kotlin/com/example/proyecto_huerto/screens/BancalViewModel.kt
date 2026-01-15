@@ -31,18 +31,13 @@ class BancalViewModel : ViewModel() {
                     flowOf(null)
                 }
             }.catch { e ->
-                println("ERROR GENERAL FIRESTORE: ${e.message}")
+                println("ERROR FIRESTORE: ${e.message}")
             }.collect { snapshot ->
                 if (snapshot != null) {
                     _bancales.value = snapshot.documents.mapNotNull { doc ->
                         try {
-                            // Intentamos convertir el documento a objeto Bancal
                             doc.data<Bancal>().copy(id = doc.id)
                         } catch (e: Exception) {
-                            // AQUI ESTÁ EL PROBLEMA: Antes esto devolvía null en silencio.
-                            // Ahora vamos a ver por qué falla.
-                            println("ERROR AL LEER BANCAL (${doc.id}): ${e.message}")
-                            e.printStackTrace()
                             null
                         }
                     }
@@ -54,37 +49,20 @@ class BancalViewModel : ViewModel() {
     }
 
     fun addBancal(nombre: String) {
-        val user = auth.currentUser
-
-        // 1. Diagnóstico de Usuario
-        if (user == null) {
-            println("ERROR: El usuario es NULL. No se puede guardar en Firestore.")
-            return
-        }
-
+        val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
-                println("INTENTANDO GUARDAR: $nombre para usuario ${user.uid}")
-
-                // Asegúrate de que tu modelo Bancal tiene valores por defecto para todo
-                val nuevo = Bancal(
-                    nombre = nombre,
-                    id = "", // Firestore generará el ID, pero el objeto necesita este campo
-                    ancho = 0.0,
-                    largo = 0.0,
-                    cultivos = emptyList(),
-                    notas = "",
-                    historico = emptyList()
+                // Usamos un mapa para asegurar que Firestore acepte los datos siempre
+                val data = mapOf(
+                    "nombre" to nombre,
+                    "cultivos" to emptyList<String>(),
+                    "ancho" to 0.0,
+                    "largo" to 0.0,
+                    "notas" to ""
                 )
-
-                // 2. Intenta guardar
-                db.collection("usuarios").document(user.uid).collection("bancales").add(nuevo)
-                println("GUARDADO EXITOSO")
-
+                db.collection("usuarios").document(user.uid).collection("bancales").add(data)
             } catch (e: Exception) {
-                // 3. Diagnóstico de Serialización o Red
-                println("EXCEPCIÓN CRÍTICA AL GUARDAR: ${e.message}")
-                e.printStackTrace()
+                println("FALLO AL AÑADIR: ${e.message}")
             }
         }
     }
@@ -97,7 +75,7 @@ class BancalViewModel : ViewModel() {
                     .document(updatedBancal.id)
                     .set(updatedBancal)
             } catch (e: Exception) {
-                println("ERROR AL ACTUALIZAR: ${e.message}")
+                println("FALLO AL ACTUALIZAR: ${e.message}")
             }
         }
     }
