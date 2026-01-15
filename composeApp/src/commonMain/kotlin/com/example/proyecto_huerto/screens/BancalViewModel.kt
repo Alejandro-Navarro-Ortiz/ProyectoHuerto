@@ -36,11 +36,8 @@ class BancalViewModel : ViewModel() {
                 if (snapshot != null) {
                     _bancales.value = snapshot.documents.mapNotNull { doc ->
                         try {
-                            // Intentamos convertir el documento a objeto Bancal
                             doc.data<Bancal>().copy(id = doc.id)
                         } catch (e: Exception) {
-                            // AQUI ESTÁ EL PROBLEMA: Antes esto devolvía null en silencio.
-                            // Ahora vamos a ver por qué falla.
                             println("ERROR AL LEER BANCAL (${doc.id}): ${e.message}")
                             e.printStackTrace()
                             null
@@ -53,10 +50,9 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    fun addBancal(nombre: String) {
+    fun addBancal(nombre: String, ancho: Int, largo: Int) {
         val user = auth.currentUser
 
-        // 1. Diagnóstico de Usuario
         if (user == null) {
             println("ERROR: El usuario es NULL. No se puede guardar en Firestore.")
             return
@@ -66,23 +62,16 @@ class BancalViewModel : ViewModel() {
             try {
                 println("INTENTANDO GUARDAR: $nombre para usuario ${user.uid}")
 
-                // Asegúrate de que tu modelo Bancal tiene valores por defecto para todo
                 val nuevo = Bancal(
                     nombre = nombre,
-                    id = "", // Firestore generará el ID, pero el objeto necesita este campo
-                    ancho = 0.0,
-                    largo = 0.0,
-                    cultivos = emptyList(),
-                    notas = "",
-                    historico = emptyList()
+                    ancho = ancho,
+                    largo = largo
                 )
 
-                // 2. Intenta guardar
                 db.collection("usuarios").document(user.uid).collection("bancales").add(nuevo)
                 println("GUARDADO EXITOSO")
 
             } catch (e: Exception) {
-                // 3. Diagnóstico de Serialización o Red
                 println("EXCEPCIÓN CRÍTICA AL GUARDAR: ${e.message}")
                 e.printStackTrace()
             }
@@ -98,6 +87,39 @@ class BancalViewModel : ViewModel() {
                     .set(updatedBancal)
             } catch (e: Exception) {
                 println("ERROR AL ACTUALIZAR: ${e.message}")
+            }
+        }
+    }
+
+    fun updateCultivo(bancal: Bancal, posicion: String, hortaliza: String) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                val nuevosCultivos = bancal.cultivos.toMutableMap()
+                nuevosCultivos[posicion] = hortaliza
+
+                val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
+
+                db.collection("usuarios").document(user.uid).collection("bancales")
+                    .document(bancal.id)
+                    .set(bancalActualizado)
+
+            } catch (e: Exception) {
+                println("ERROR AL ACTUALIZAR EL CULTIVO: ${e.message}")
+            }
+        }
+    }
+
+    // Nuevo método para eliminar un bancal
+    fun deleteBancal(bancalId: String) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                db.collection("usuarios").document(user.uid).collection("bancales")
+                    .document(bancalId)
+                    .delete()
+            } catch (e: Exception) {
+                println("ERROR AL ELIMINAR BANCAL: ${e.message}")
             }
         }
     }

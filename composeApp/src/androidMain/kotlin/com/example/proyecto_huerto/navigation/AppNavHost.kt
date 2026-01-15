@@ -26,7 +26,6 @@ import com.example.proyecto_huerto.screens.GestionBancalesScreen
 import com.example.proyecto_huerto.screens.DetalleBancalScreen
 import com.example.proyecto_huerto.screens.BancalViewModel
 import com.example.proyecto_huerto.screens.HomeScreen
-import com.example.proyecto_huerto.models.Bancal
 import kotlinx.coroutines.launch
 
 @Composable
@@ -67,10 +66,17 @@ fun AppNavHost(
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if(state.isSignInSuccessful) {
+                    Toast.makeText(context, "Inicio de sesión correcto", Toast.LENGTH_LONG).show()
                     navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                     signInViewModel.resetState()
+                }
+            }
+
+            LaunchedEffect(key1 = state.signInError) {
+                state.signInError?.let { error ->
+                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                 }
             }
 
@@ -125,7 +131,8 @@ fun AppNavHost(
             val bancales by bancalViewModel.bancales.collectAsState()
             GestionBancalesScreen(
                 bancales = bancales,
-                onAddBancal = { nombre -> bancalViewModel.addBancal(nombre) },
+                onAddBancal = { nombre, ancho, largo -> bancalViewModel.addBancal(nombre, ancho, largo) },
+                onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) },
                 onNavigate = { screen ->
                     if (screen == "Perfil") navController.navigate("profile")
                     if (screen == "Inicio") navController.navigate("home") {
@@ -140,17 +147,18 @@ fun AppNavHost(
             route = "detalle_bancal/{bancalId}",
             arguments = listOf(navArgument("bancalId") { type = NavType.StringType })
         ) { backStackEntry ->
+            // ¡Este es el cambio clave! Recolectamos el estado aquí.
+            val bancales by bancalViewModel.bancales.collectAsState()
             val id = backStackEntry.arguments?.getString("bancalId")
-            val bancal = id?.let { bancalViewModel.getBancalById(it) }
+            val bancal = id?.let { bancalId -> bancales.find { it.id == bancalId } }
 
             if (bancal != null) {
                 DetalleBancalScreen(
                     bancal = bancal,
-                    onSave = { updatedBancal ->
-                        bancalViewModel.updateBancal(updatedBancal)
-                        navController.popBackStack()
-                    },
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onUpdateCultivo = { posicion, hortaliza ->
+                        bancalViewModel.updateCultivo(bancal, posicion, hortaliza)
+                    }
                 )
             }
         }
