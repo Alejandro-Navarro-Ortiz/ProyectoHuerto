@@ -39,7 +39,8 @@ import androidx.compose.material3.IconButton
 fun GestionBancalesScreen(
     bancales: List<Bancal>,
     onAddBancal: (String) -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onBancalClick: (String) -> Unit
 ) {
     var nombreBancal by remember { mutableStateOf("") }
 
@@ -100,6 +101,7 @@ fun GestionBancalesScreen(
             LazyColumn {
                 items(bancales) { bancal ->
                     Card(
+                        onClick = { onBancalClick(bancal.id) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)

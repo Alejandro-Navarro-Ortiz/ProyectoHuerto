@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.googleGmsGoogleServices)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 
 kotlin {
@@ -31,7 +32,6 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation("androidx.navigation:navigation-compose:2.7.7")
-            // Se especifican las versiones directamente porque el BOM (platform) no es compatible en este contexto
             implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
             implementation("com.google.android.gms:play-services-auth:21.2.0")
             implementation("androidx.credentials:credentials:1.2.2")
@@ -44,13 +44,16 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-
-            // --- LÍNEA AÑADIDA PARA SOLUCIONAR EL ERROR DE ICONOS ---
             implementation(compose.materialIconsExtended)
-            // --------------------------------------------------------
-
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            // Firebase Multiplatform
+            implementation("dev.gitlive:firebase-firestore:1.13.0")
+            implementation("dev.gitlive:firebase-auth:1.13.0")
+            // Serialización
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -83,9 +86,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-}
-
-// Dependencias a nivel de módulo, como Firestore, se quedan aquí
-dependencies {
-    implementation(libs.firebase.firestore)
 }

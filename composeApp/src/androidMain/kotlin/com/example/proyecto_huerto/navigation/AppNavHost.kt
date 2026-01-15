@@ -12,17 +12,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.GestionBancalesScreen
+import com.example.proyecto_huerto.screens.DetalleBancalScreen
 import com.example.proyecto_huerto.screens.BancalViewModel
 import com.example.proyecto_huerto.screens.HomeScreen
+import com.example.proyecto_huerto.models.Bancal
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,6 +35,8 @@ fun AppNavHost(
     lifecycleScope: LifecycleCoroutineScope
 ) {
     val navController = rememberNavController()
+    val bancalViewModel: BancalViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = "sign_in") {
         composable("sign_in") {
             val signInViewModel = viewModel<SignInViewModel>()
@@ -47,8 +53,7 @@ fun AppNavHost(
 
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartIntentSenderForResult(),
-                onResult = {
-                    result ->
+                onResult = { result ->
                     if(result.resultCode == Activity.RESULT_OK) {
                         lifecycleScope.launch {
                             val signInResult = googleAuthUiClient.signInWithIntent(
@@ -62,18 +67,10 @@ fun AppNavHost(
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if(state.isSignInSuccessful) {
-                    Toast.makeText(context, "Inicio de sesión correcto", Toast.LENGTH_LONG).show()
                     navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                     signInViewModel.resetState()
-                }
-            }
-
-            LaunchedEffect(key1 = state.signInError) {
-                state.signInError?.let { error ->
-                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    signInViewModel.clearError()
                 }
             }
 
@@ -82,9 +79,7 @@ fun AppNavHost(
                     lifecycleScope.launch {
                         val signInIntentSender = googleAuthUiClient.signIn()
                         launcher.launch(
-                            IntentSenderRequest.Builder(
-                                signInIntentSender ?: return@launch
-                            ).build()
+                            IntentSenderRequest.Builder(signInIntentSender ?: return@launch).build()
                         )
                     }
                 },
@@ -97,26 +92,17 @@ fun AppNavHost(
                 onNavigateToSignUp = { navController.navigate("sign_up") }
             )
         }
-        
+
         composable("sign_up") {
             val signInViewModel = viewModel<SignInViewModel>()
             val state by signInViewModel.state.collectAsState()
-            val context = LocalContext.current
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
-                    Toast.makeText(context, "Registro completado", Toast.LENGTH_LONG).show()
                     navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                     signInViewModel.resetState()
-                }
-            }
-
-            LaunchedEffect(key1 = state.signInError) {
-                state.signInError?.let { error ->
-                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    signInViewModel.clearError()
                 }
             }
 
@@ -131,16 +117,12 @@ fun AppNavHost(
             )
         }
 
-        composable("home") { 
-            HomeScreen { route ->
-                navController.navigate(route)
-            }
+        composable("home") {
+            HomeScreen { route -> navController.navigate(route) }
         }
 
         composable("gestion_bancales") {
-            val bancalViewModel = viewModel<BancalViewModel>()
             val bancales by bancalViewModel.bancales.collectAsState()
-            
             GestionBancalesScreen(
                 bancales = bancales,
                 onAddBancal = { nombre -> bancalViewModel.addBancal(nombre) },
@@ -149,21 +131,37 @@ fun AppNavHost(
                     if (screen == "Inicio") navController.navigate("home") {
                         popUpTo("home") { inclusive = true }
                     }
-                }
+                },
+                onBancalClick = { id -> navController.navigate("detalle_bancal/$id") }
             )
         }
 
+        composable(
+            route = "detalle_bancal/{bancalId}",
+            arguments = listOf(navArgument("bancalId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("bancalId")
+            val bancal = id?.let { bancalViewModel.getBancalById(it) }
+
+            if (bancal != null) {
+                DetalleBancalScreen(
+                    bancal = bancal,
+                    onSave = { updatedBancal ->
+                        bancalViewModel.updateBancal(updatedBancal)
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
         composable("profile") {
-            val context = LocalContext.current
             ProfileScreen(
                 userData = googleAuthUiClient.getSignedInUser(),
                 onSignOut = {
                     lifecycleScope.launch {
                         googleAuthUiClient.signOut()
-                        Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_LONG).show()
-                        navController.navigate("sign_in") {
-                            popUpTo(0)
-                        }
+                        navController.navigate("sign_in") { popUpTo(0) }
                     }
                 }
             )
