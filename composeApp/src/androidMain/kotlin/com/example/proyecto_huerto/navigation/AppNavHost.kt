@@ -171,7 +171,8 @@ fun AppNavHost(
                         googleAuthUiClient.signOut()
                         navController.navigate("sign_in") { popUpTo(0) }
                     }
-                }
+                },
+                onBack = { navController.popBackStack() } // Añade esto
             )
         }
     }

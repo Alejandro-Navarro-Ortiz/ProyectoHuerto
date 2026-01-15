@@ -43,7 +43,8 @@ class GoogleAuthUiClient(
                     UserData(
                         userId = uid,
                         username = displayName,
-                        profilePictureUrl = photoUrl?.toString()
+                        profilePictureUrl = photoUrl?.toString(),
+                        email = email
                     )
                 },
                 errorMessage = null
@@ -65,7 +66,12 @@ class GoogleAuthUiClient(
             val result = auth.signInWithEmailAndPassword(email, password).await()
             SignInResult(
                 data = result.user?.let {
-                    UserData(it.uid, it.displayName ?: it.email, it.photoUrl?.toString())
+                    UserData(
+                        userId = it.uid,
+                        username = it.displayName ?: it.email,
+                        profilePictureUrl = it.photoUrl?.toString(),
+                        email = it.email
+                    )
                 },
                 errorMessage = null
             )
@@ -80,7 +86,12 @@ class GoogleAuthUiClient(
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             SignInResult(
                 data = result.user?.let {
-                    UserData(it.uid, it.displayName ?: it.email, it.photoUrl?.toString())
+                    UserData(
+                        userId = it.uid,
+                        username = it.displayName ?: it.email,
+                        profilePictureUrl = it.photoUrl?.toString(),
+                        email = it.email
+                    )
                 },
                 errorMessage = null
             )
@@ -106,7 +117,8 @@ class GoogleAuthUiClient(
         UserData(
             userId = uid,
             username = displayName ?: email,
-            profilePictureUrl = photoUrl?.toString()
+            profilePictureUrl = photoUrl?.toString(),
+            email = email
         )
     }
 
