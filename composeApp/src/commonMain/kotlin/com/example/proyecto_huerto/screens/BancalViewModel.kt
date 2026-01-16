@@ -3,6 +3,9 @@ package com.example.proyecto_huerto.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_huerto.models.Bancal
+import com.example.proyecto_huerto.models.Cultivo
+import com.example.proyecto_huerto.models.hortalizasDisponibles
+import com.example.proyecto_huerto.util.getCurrentInstant
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
@@ -78,14 +81,20 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    // Función optimizada para actualizar múltiples cultivos a la vez
-    fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortaliza: String) {
+    fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortalizaNombre: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
+                val hortaliza = hortalizasDisponibles.find { it.nombre == hortalizaNombre } ?: return@launch
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
+                val nuevoCultivo = Cultivo(
+                    nombreHortaliza = hortaliza.nombre,
+                    frecuenciaRiegoDias = 2, // Por defecto, regar cada 2 días. Ajustar si es necesario.
+                    ultimaVezRegado = getCurrentInstant()
+                )
+
                 posiciones.forEach {
-                    nuevosCultivos[it] = hortaliza
+                    nuevosCultivos[it] = nuevoCultivo
                 }
 
                 val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
@@ -96,6 +105,31 @@ class BancalViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 println("ERROR AL ACTUALIZAR EL CULTIVO: ${e.message}")
+            }
+        }
+    }
+
+    fun regarCultivos(bancal: Bancal, posiciones: List<String>) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                val cultivosActualizados = bancal.cultivos.toMutableMap()
+                val ahora = getCurrentInstant()
+
+                posiciones.forEach { pos ->
+                    cultivosActualizados[pos]?.let {
+                        cultivosActualizados[pos] = it.copy(ultimaVezRegado = ahora)
+                    }
+                }
+
+                val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)
+
+                db.collection("usuarios").document(user.uid).collection("bancales")
+                    .document(bancal.id)
+                    .set(bancalActualizado)
+
+            } catch (e: Exception) {
+                println("ERROR AL REGAR LOS CULTIVOS: ${e.message}")
             }
         }
     }

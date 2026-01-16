@@ -1,6 +1,12 @@
 package com.example.proyecto_huerto.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -14,11 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.proyecto_huerto.models.Tarea
+import com.example.proyecto_huerto.util.getCurrentInstant
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun DiarioScreen(
     viewModel: DiarioViewModel,
@@ -28,7 +36,8 @@ fun DiarioScreen(
     val datePickerState = rememberDatePickerState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    val selectedDate = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+    // Usamos la función KMP para obtener la fecha/hora actual de forma segura
+    val selectedDate = datePickerState.selectedDateMillis ?: getCurrentInstant().toEpochMilliseconds()
 
     Scaffold(
         topBar = {
@@ -185,10 +194,17 @@ fun AddTareaDialog(
     )
 }
 
+/**
+ * Compara dos timestamps en milisegundos para ver si corresponden al mismo día
+ * utilizando kotlinx-datetime para ser compatible con KMP.
+ */
+@OptIn(ExperimentalTime::class)
 private fun isSameDay(millis1: Long, millis2: Long): Boolean {
-    // Simple comparison for demo purposes. 
-    // In a real KMP app, use kotlinx-datetime for proper time zone handling.
-    val day1 = millis1 / (24 * 60 * 60 * 1000)
-    val day2 = millis2 / (24 * 60 * 60 * 1000)
-    return day1 == day2
+    val instant1 = Instant.fromEpochMilliseconds(millis1)
+    val instant2 = Instant.fromEpochMilliseconds(millis2)
+    // TimeZone.currentSystemDefault() es 'expect' y se resuelve en cada plataforma.
+    val timeZone = TimeZone.currentSystemDefault()
+    val date1 = instant1.toLocalDateTime(timeZone).date
+    val date2 = instant2.toLocalDateTime(timeZone).date
+    return date1 == date2
 }

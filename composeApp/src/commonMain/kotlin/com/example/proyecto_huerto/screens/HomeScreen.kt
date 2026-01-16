@@ -27,7 +27,6 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     val options = listOf(
         HomeOption("Mis Bancales", Icons.Filled.Yard, "gestion_bancales"),
         HomeOption("Diario de Cultivo", Icons.Filled.Book, "diario_cultivo"),
-        HomeOption("Calendario", Icons.Filled.CalendarToday, "calendario"),
         HomeOption("Plagas", Icons.Filled.BugReport, "plagas"),
         HomeOption("Consejos", Icons.Filled.Lightbulb, "consejos"),
         HomeOption("Tareas", Icons.Filled.Checklist, "tareas")

@@ -156,6 +156,9 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                     onUpdateCultivos = { posiciones, hortaliza ->
                         bancalViewModel.updateCultivos(bancal, posiciones, hortaliza)
+                    },
+                    onRegarCultivos = { posiciones ->
+                        bancalViewModel.regarCultivos(bancal, posiciones)
                     }
                 )
             }
