@@ -1,43 +1,45 @@
 package com.example.proyecto_huerto.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.isEmpty
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Tarea
-import com.example.proyecto_huerto.util.getCurrentInstant
+import com.example.proyecto_huerto.models.Actividad
+import com.example.proyecto_huerto.models.TipoActividad
+import com.example.proyecto_huerto.screensimport.DiarioViewModel
+import com.example.proyecto_huerto.util.getCurrentEpochMillis
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiarioScreen(
     viewModel: DiarioViewModel,
     onBack: () -> Unit
 ) {
     val tareas by viewModel.tareas.collectAsState()
+    val actividades by viewModel.actividades.collectAsState()
     val datePickerState = rememberDatePickerState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // Usamos la función KMP para obtener la fecha/hora actual de forma segura
-    val selectedDate = datePickerState.selectedDateMillis ?: getCurrentInstant().toEpochMilliseconds()
+    // Usamos nuestra utilidad para obtener el tiempo actual en millis
+    val selectedDate = datePickerState.selectedDateMillis ?: getCurrentEpochMillis()
 
     Scaffold(
         topBar = {
@@ -59,11 +61,7 @@ fun DiarioScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             DatePicker(
                 state = datePickerState,
                 showModeToggle = false,
@@ -74,28 +72,41 @@ fun DiarioScreen(
 
             HorizontalDivider()
 
-            val tareasDelDia = tareas.filter { tarea ->
-                isSameDay(tarea.fecha, selectedDate)
-            }
+            val tareasDelDia = tareas.filter { isSameDay(it.fecha, selectedDate) }
+            val actividadesDelDia = actividades.filter { isSameDay(it.fecha, selectedDate) }
 
-            if (tareasDelDia.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No hay tareas para este día", style = MaterialTheme.typography.bodyLarge)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (actividadesDelDia.isNotEmpty()) {
+                    item {
+                        Text("Actividades Automáticas", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                    }
+                    items(actividadesDelDia) { actividad ->
+                        ActividadItem(actividad)
+                    }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+
+                if (tareasDelDia.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Tareas Manuales", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                    }
                     items(tareasDelDia) { tarea ->
                         TareaItem(
                             tarea = tarea,
                             onToggleCompletada = { viewModel.toggleTareaCompletada(tarea) },
                             onDelete = { viewModel.deleteTarea(tarea.id) }
                         )
+                    }
+                }
+
+                if (tareasDelDia.isEmpty() && actividadesDelDia.isEmpty()) {
+                    item {
+                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No hay registros para este día")
+                        }
                     }
                 }
             }
@@ -114,35 +125,46 @@ fun DiarioScreen(
 }
 
 @Composable
-fun TareaItem(
-    tarea: Tarea,
-    onToggleCompletada: () -> Unit,
-    onDelete: () -> Unit
-) {
+fun ActividadItem(actividad: Actividad) {
+    val icon = when (actividad.tipo) {
+        TipoActividad.RIEGO -> Icons.Default.WaterDrop
+        TipoActividad.SIEMBRA -> Icons.Default.Grass
+        else -> Icons.Default.History
+    }
+    val color = if (actividad.tipo == TipoActividad.RIEGO) Color(0xFF2196F3) else Color(0xFF4CAF50)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.3f))
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = color)
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(actividad.tipo.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = color)
+                Text("Bancal: ${actividad.nombreBancal}", style = MaterialTheme.typography.bodyMedium)
+                Text(actividad.detalle, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+fun TareaItem(tarea: Tarea, onToggleCompletada: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (tarea.completada) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
         )
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = tarea.completada,
-                onCheckedChange = { onToggleCompletada() }
-            )
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = tarea.completada, onCheckedChange = { onToggleCompletada() })
             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                Text(
-                    text = tarea.titulo,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(tarea.titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 if (tarea.descripcion.isNotBlank()) {
-                    Text(text = tarea.descripcion, style = MaterialTheme.typography.bodySmall)
+                    Text(tarea.descripcion, style = MaterialTheme.typography.bodySmall)
                 }
-                Text(text = "Tipo: ${tarea.tipo}", style = MaterialTheme.typography.labelSmall)
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
@@ -152,10 +174,7 @@ fun TareaItem(
 }
 
 @Composable
-fun AddTareaDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, String) -> Unit
-) {
+fun AddTareaDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     val tipos = listOf("RIEGO", "SIEMBRA", "COSECHA", "TRATAMIENTO", "OTRA")
@@ -166,27 +185,19 @@ fun AddTareaDialog(
         title = { Text("Nueva Tarea") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") })
-                TextField(value = descripcion, onValueChange = { descripcion = it }, label = { Text("Descripción") })
+                TextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, modifier = Modifier.fillMaxWidth())
+                TextField(value = descripcion, onValueChange = { descripcion = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
                 Text("Tipo:", style = MaterialTheme.typography.labelLarge)
                 tipos.forEach { tipo ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                    ) {
-                        RadioButton(
-                            selected = (tipo == tipoSeleccionado),
-                            onClick = { tipoSeleccionado = tipo }
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { tipoSeleccionado = tipo }) {
+                        RadioButton(selected = (tipo == tipoSeleccionado), onClick = { tipoSeleccionado = tipo })
                         Text(text = tipo, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (titulo.isNotBlank()) onConfirm(titulo, descripcion, tipoSeleccionado) }) {
-                Text("Añadir")
-            }
+            TextButton(onClick = { if (titulo.isNotBlank()) onConfirm(titulo, descripcion, tipoSeleccionado) }) { Text("Añadir") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }
@@ -194,17 +205,11 @@ fun AddTareaDialog(
     )
 }
 
-/**
- * Compara dos timestamps en milisegundos para ver si corresponden al mismo día
- * utilizando kotlinx-datetime para ser compatible con KMP.
- */
 @OptIn(ExperimentalTime::class)
 private fun isSameDay(millis1: Long, millis2: Long): Boolean {
     val instant1 = Instant.fromEpochMilliseconds(millis1)
     val instant2 = Instant.fromEpochMilliseconds(millis2)
-    // TimeZone.currentSystemDefault() es 'expect' y se resuelve en cada plataforma.
-    val timeZone = TimeZone.currentSystemDefault()
-    val date1 = instant1.toLocalDateTime(timeZone).date
-    val date2 = instant2.toLocalDateTime(timeZone).date
+    val date1 = instant1.toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val date2 = instant2.toLocalDateTime(TimeZone.currentSystemDefault()).date
     return date1 == date2
 }

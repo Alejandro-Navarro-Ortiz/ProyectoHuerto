@@ -24,6 +24,7 @@ import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.*
+import com.example.proyecto_huerto.screensimport.DiarioViewModel
 import kotlinx.coroutines.launch
 
 @Composable

@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.googleGmsGoogleServices)
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -51,12 +51,13 @@ kotlin {
             // Firebase Multiplatform
             implementation("dev.gitlive:firebase-firestore:1.13.0")
             implementation("dev.gitlive:firebase-auth:1.13.0")
+
             // Serialización
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-            
-            // Datetime
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+            implementation(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.json)
+
+            // Datetime (Usamos api para que el bridge de tiempo sea visible)
+            api(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

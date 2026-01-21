@@ -3,7 +3,8 @@ package com.example.proyecto_huerto.models
 import com.example.proyecto_huerto.util.getCurrentInstant
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual // Import this
-import kotlinx.serialization.Serializable    import kotlin.time.Duration.Companion.days
+import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 
 @Serializable

@@ -4,7 +4,14 @@ import kotlinx.datetime.Instant
 import kotlin.time.ExperimentalTime
 
 /**
- * Espera una implementación específica de la plataforma para obtener el Instant actual.
+ * Puente expect/actual usando Long para evitar conflictos de tipos Instant entre plataformas.
+ */
+expect fun getCurrentEpochMillis(): Long
+
+/**
+ * Función que usa toda la aplicación para obtener el tiempo actual.
  */
 @OptIn(ExperimentalTime::class)
-expect fun getCurrentInstant(): Instant
+fun getCurrentInstant(): Instant {
+    return Instant.fromEpochMilliseconds(getCurrentEpochMillis())
+}

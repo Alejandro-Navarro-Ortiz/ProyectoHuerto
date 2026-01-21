@@ -12,7 +12,7 @@ REGLAS OPERATIVAS ESTRICTAS:
 
 3. FORMATO DE RESPUESTA:
    - Entrega el código dentro de bloques de código Markdown claros.
-   - Si necesitas explicar algo, hazlo de forma extremadamente breve después del código.
+
 
 4. CONTEXTO KMP:
    - Ten siempre en cuenta la separación de fuentes (commonMain, androidMain, iosMain).

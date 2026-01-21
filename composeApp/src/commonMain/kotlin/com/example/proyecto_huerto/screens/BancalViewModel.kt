@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.proyecto_huerto.models.Bancal
 import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.hortalizasDisponibles
+import com.example.proyecto_huerto.models.Actividad
+import com.example.proyecto_huerto.models.TipoActividad
 import com.example.proyecto_huerto.util.getCurrentInstant
+import com.example.proyecto_huerto.util.getCurrentEpochMillis
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
@@ -53,29 +56,31 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    fun addBancal(nombre: String, ancho: Int, largo: Int) {
-        val user = auth.currentUser
-
-        if (user == null) {
-            println("ERROR: El usuario es NULL. No se puede guardar en Firestore.")
-            return
-        }
-
+    private fun registrarActividad(tipo: TipoActividad, nombreBancal: String, detalle: String) {
+        val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
-                println("INTENTANDO GUARDAR: $nombre para usuario ${user.uid}")
-
-                val nuevo = Bancal(
-                    nombre = nombre,
-                    ancho = ancho,
-                    largo = largo
+                val actividad = Actividad(
+                    tipo = tipo,
+                    fecha = getCurrentEpochMillis(),
+                    nombreBancal = nombreBancal,
+                    detalle = detalle,
+                    usuarioId = user.uid
                 )
-
-                db.collection("usuarios").document(user.uid).collection("bancales").add(nuevo)
-                println("GUARDADO EXITOSO")
-
+                db.collection("usuarios").document(user.uid).collection("actividades").add(actividad)
             } catch (e: Exception) {
-                println("EXCEPCIÓN CRÍTICA AL GUARDAR: ${e.message}")
+                println("Error al registrar actividad: ${e.message}")
+            }
+        }
+    }
+
+    fun addBancal(nombre: String, ancho: Int, largo: Int) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                val nuevo = Bancal(nombre = nombre, ancho = ancho, largo = largo)
+                db.collection("usuarios").document(user.uid).collection("bancales").add(nuevo)
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
@@ -89,19 +94,23 @@ class BancalViewModel : ViewModel() {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val nuevoCultivo = Cultivo(
                     nombreHortaliza = hortaliza.nombre,
-                    frecuenciaRiegoDias = 2, // Por defecto, regar cada 2 días. Ajustar si es necesario.
+                    frecuenciaRiegoDias = 2,
                     ultimaVezRegado = getCurrentInstant()
                 )
 
-                posiciones.forEach {
-                    nuevosCultivos[it] = nuevoCultivo
-                }
-
+                posiciones.forEach { nuevosCultivos[it] = nuevoCultivo }
                 val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
 
                 db.collection("usuarios").document(user.uid).collection("bancales")
                     .document(bancal.id)
                     .set(bancalActualizado)
+
+                // Registro automático de siembra
+                registrarActividad(
+                    tipo = TipoActividad.SIEMBRA,
+                    nombreBancal = bancal.nombre,
+                    detalle = "Sembrado: ${hortaliza.nombre} (${posiciones.size} celdas)"
+                )
 
             } catch (e: Exception) {
                 println("ERROR AL ACTUALIZAR EL CULTIVO: ${e.message}")
@@ -127,6 +136,13 @@ class BancalViewModel : ViewModel() {
                 db.collection("usuarios").document(user.uid).collection("bancales")
                     .document(bancal.id)
                     .set(bancalActualizado)
+
+                // Registro automático de riego
+                registrarActividad(
+                    tipo = TipoActividad.RIEGO,
+                    nombreBancal = bancal.nombre,
+                    detalle = "Regadas ${posiciones.size} secciones"
+                )
 
             } catch (e: Exception) {
                 println("ERROR AL REGAR LOS CULTIVOS: ${e.message}")
