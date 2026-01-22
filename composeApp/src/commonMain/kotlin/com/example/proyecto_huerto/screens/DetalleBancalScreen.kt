@@ -3,49 +3,28 @@ package com.example.proyecto_huerto.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Bancal
 import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.Hortaliza
@@ -66,15 +45,18 @@ fun DetalleBancalScreen(
     var mostrarDialogoRiego by remember { mutableStateOf(false) }
     var justWateredPositions by remember { mutableStateOf(emptySet<String>()) }
 
-    // Efecto para limpiar el feedback visual del riego después de un tiempo
+    // Estados para la validación de compatibilidad visual
+    var mostrarAvisoIncompatibilidad by remember { mutableStateOf(false) }
+    var plantaPendiente by remember { mutableStateOf<Hortaliza?>(null) }
+    var enemigosDetectados by remember { mutableStateOf<List<Hortaliza>>(emptyList()) }
+
     LaunchedEffect(justWateredPositions) {
         if (justWateredPositions.isNotEmpty()) {
-            delay(2000L) // Muestra el feedback durante 2 segundos
+            delay(2000L)
             justWateredPositions = emptySet()
         }
     }
 
-    // Comprueba si alguna celda seleccionada contiene un cultivo para mostrar el botón de riego
     val seleccionContieneCultivos = remember(posicionesSeleccionadas, bancal.cultivos) {
         posicionesSeleccionadas.any { bancal.cultivos[it] != null }
     }
@@ -99,7 +81,6 @@ fun DetalleBancalScreen(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // FAB para plantar, siempre visible si hay una selección
                     FloatingActionButton(
                         onClick = { mostrarDialogoPlantas = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -107,7 +88,6 @@ fun DetalleBancalScreen(
                         Icon(Icons.Default.Check, contentDescription = "Plantar Hortaliza")
                     }
 
-                    // FAB para regar, solo visible si una celda seleccionada tiene un cultivo
                     if (seleccionContieneCultivos) {
                         FloatingActionButton(
                             onClick = { mostrarDialogoRiego = true },
@@ -169,7 +149,6 @@ fun DetalleBancalScreen(
                             }
                         } else {
                             posicionesSeleccionadas = setOf(posicion)
-                            // Si la celda tiene cultivo, preguntamos para regar, si no, para plantar
                             if (bancal.cultivos[posicion] != null) {
                                 mostrarDialogoRiego = true
                             } else {
@@ -189,10 +168,105 @@ fun DetalleBancalScreen(
                 mostrarDialogoPlantas = false
                 posicionesSeleccionadas = emptySet()
             },
-            onSelect = {
-                onUpdateCultivos(posicionesSeleccionadas.toList(), it.nombre)
-                mostrarDialogoPlantas = false
-                posicionesSeleccionadas = emptySet()
+            onSelect = { hortaliza ->
+                val nombresEnemigos = verificarIncompatibilidad(
+                    nueva = hortaliza,
+                    seleccionadas = posicionesSeleccionadas.toList(),
+                    bancal = bancal
+                )
+
+                if (nombresEnemigos.isNotEmpty()) {
+                    plantaPendiente = hortaliza
+                    enemigosDetectados = hortalizasDisponibles.filter { it.nombre in nombresEnemigos }
+                    mostrarAvisoIncompatibilidad = true
+                    mostrarDialogoPlantas = false
+                } else {
+                    onUpdateCultivos(posicionesSeleccionadas.toList(), hortaliza.nombre)
+                    mostrarDialogoPlantas = false
+                    posicionesSeleccionadas = emptySet()
+                }
+            }
+        )
+    }
+
+    if (mostrarAvisoIncompatibilidad && plantaPendiente != null) {
+        AlertDialog(
+            onDismissRequest = { mostrarAvisoIncompatibilidad = false },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
+            title = {
+                Text(
+                    "Conflicto de Cultivo",
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Estas plantas no se llevan bien:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Planta que quieres poner
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(plantaPendiente!!.icono, fontSize = 40.sp)
+                            Text(plantaPendiente!!.nombre, style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 16.dp).size(32.dp)
+                        )
+
+                        // Plantas enemigas encontradas
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            enemigosDetectados.forEach { enemigo ->
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(enemigo.icono, fontSize = 40.sp)
+                                    Text(enemigo.nombre, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Plantar hortalizas incompatibles puede reducir la cosecha o atraer plagas.",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        plantaPendiente?.let { onUpdateCultivos(posicionesSeleccionadas.toList(), it.nombre) }
+                        mostrarAvisoIncompatibilidad = false
+                        posicionesSeleccionadas = emptySet()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Plantar de todos modos")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    mostrarAvisoIncompatibilidad = false
+                    mostrarDialogoPlantas = true
+                }) {
+                    Text("Cambiar planta")
+                }
             }
         )
     }
@@ -206,7 +280,7 @@ fun DetalleBancalScreen(
                 TextButton(
                     onClick = {
                         onRegarCultivos(posicionesSeleccionadas.toList())
-                        justWateredPositions = posicionesSeleccionadas // Activa el feedback visual
+                        justWateredPositions = posicionesSeleccionadas
                         mostrarDialogoRiego = false
                         posicionesSeleccionadas = emptySet()
                     }
@@ -217,6 +291,32 @@ fun DetalleBancalScreen(
             }
         )
     }
+}
+
+private fun verificarIncompatibilidad(nueva: Hortaliza, seleccionadas: List<String>, bancal: Bancal): Set<String> {
+    val enemigosEncontrados = mutableSetOf<String>()
+
+    seleccionadas.forEach { pos ->
+        val partes = pos.split("-")
+        val f = partes[0].toInt()
+        val c = partes[1].toInt()
+
+        for (df in -1..1) {
+            for (dc in -1..1) {
+                if (df == 0 && dc == 0) continue
+                val nf = f + df
+                val nc = c + dc
+                val posVecina = "$nf-$nc"
+
+                bancal.cultivos[posVecina]?.let { cultivoVecino ->
+                    if (nueva.incompatibles.contains(cultivoVecino.nombreHortaliza)) {
+                        enemigosEncontrados.add(cultivoVecino.nombreHortaliza)
+                    }
+                }
+            }
+        }
+    }
+    return enemigosEncontrados
 }
 
 @Composable
@@ -239,13 +339,12 @@ fun CeldaBancal(cultivo: Cultivo?, isSelected: Boolean, isJustWatered: Boolean, 
             if (cultivo != null) {
                 Text(
                     text = hortalizasDisponibles.find { it.nombre == cultivo.nombreHortaliza }?.icono ?: "❓",
-                    fontSize = MaterialTheme.typography.headlineMedium.fontSize
+                    fontSize = 24.sp
                 )
             } else if (!isSelected) {
                 Box(modifier = Modifier.size(12.dp).background(Color.Gray.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small))
             }
 
-            // Feedback visual para el riego
             if (isJustWatered) {
                 Box(
                     modifier = Modifier
@@ -275,20 +374,25 @@ fun DialogoSeleccionHortaliza(
         onDismissRequest = onDismiss,
         title = { Text("Selecciona una hortaliza") },
         text = {
-            LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 80.dp)) {
-                items(hortalizas.size) { index ->
-                    val hortaliza = hortalizas[index]
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 80.dp),
+                modifier = Modifier.heightIn(max = 300.dp)
+            ) {
+                items(hortalizas) { hortaliza ->
                     Column(
-                        modifier = Modifier.padding(8.dp).clickable { onSelect(hortaliza) },
+                        modifier = Modifier
+                            .clickable { onSelect(hortaliza) }
+                            .padding(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(hortaliza.icono, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
-                        Text(hortaliza.nombre, style = MaterialTheme.typography.bodySmall)
+                        Text(hortaliza.icono, fontSize = 32.sp)
+                        Text(hortaliza.nombre, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
         },
-        confirmButton = {
+        confirmButton = {},
+        dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )

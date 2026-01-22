@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Yard
 import androidx.compose.material3.Card
@@ -54,7 +55,7 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
         HomeOption("Bancales", Icons.Filled.Yard, "gestion_bancales"),
         HomeOption("Diario", Icons.Filled.Book, "diario_cultivo"),
         HomeOption("Plagas", Icons.Filled.BugReport, "plagas"),
-        HomeOption("Consejos", Icons.Filled.Lightbulb, "consejos")
+        HomeOption("Guía", Icons.Filled.LocalFlorist, "guia_hortalizas")
     )
 
     val cardOptions = listOf(
@@ -62,6 +63,7 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
         HomeOption("Diario de Cultivo", Icons.Filled.Book, "diario_cultivo"),
         HomeOption("Plagas", Icons.Filled.BugReport, "plagas"),
         HomeOption("Consejos", Icons.Filled.Lightbulb, "consejos"),
+        HomeOption("Guía de Hortalizas", Icons.Filled.LocalFlorist, "guia_hortalizas")
     )
 
     Scaffold(
@@ -89,7 +91,7 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                     NavigationBarItem(
                         icon = { Icon(option.icon, contentDescription = option.title) },
                         label = { Text(option.title) },
-                        selected = false, // La selección se gestionaría con el NavController
+                        selected = false,
                         onClick = { onNavigate(option.route) }
                     )
                 }
@@ -101,19 +103,19 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
             contentPadding = PaddingValues(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Sección de tarjetas principales
+            // Filas de 2 botones
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     HomeOptionCard(
-                        modifier = Modifier.weight(1f).height(150.dp),
+                        modifier = Modifier.weight(1f).height(120.dp),
                         option = cardOptions[0],
                         onClick = { onNavigate(cardOptions[0].route) }
                     )
                     HomeOptionCard(
-                        modifier = Modifier.weight(1f).height(150.dp),
+                        modifier = Modifier.weight(1f).height(120.dp),
                         option = cardOptions[1],
                         onClick = { onNavigate(cardOptions[1].route) }
                     )
@@ -125,21 +127,30 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     HomeOptionCard(
-                        modifier = Modifier.weight(1f).height(150.dp),
+                        modifier = Modifier.weight(1f).height(120.dp),
                         option = cardOptions[2],
                         onClick = { onNavigate(cardOptions[2].route) },
                         backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
                     )
                     HomeOptionCard(
-                        modifier = Modifier.weight(1f).height(150.dp),
+                        modifier = Modifier.weight(1f).height(120.dp),
                         option = cardOptions[3],
                         onClick = { onNavigate(cardOptions[3].route) },
                         backgroundColor = MaterialTheme.colorScheme.secondaryContainer
                     )
                 }
             }
+            // 5º Botón: Guía de Hortalizas (Ocupa toda la fila)
+            item {
+                HomeOptionCard(
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    option = cardOptions[4],
+                    onClick = { onNavigate(cardOptions[4].route) },
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            }
 
-            // Sección de actividad reciente
+            // Actividad reciente
             if (recentActivities.isNotEmpty()) {
                 item {
                     Text(
@@ -178,10 +189,10 @@ fun HomeOptionCard(
             Icon(
                 imageVector = option.icon,
                 contentDescription = option.title,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = option.title,
                 style = MaterialTheme.typography.titleMedium,

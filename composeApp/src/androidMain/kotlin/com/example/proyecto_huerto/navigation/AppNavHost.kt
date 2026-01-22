@@ -25,7 +25,7 @@ import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.* 
+import java.util.*
 
 @Composable
 fun AppNavHost(
@@ -125,7 +125,6 @@ fun AppNavHost(
 
         composable("home") {
             val actividades by diarioViewModel.actividades.collectAsState()
-            // Formateador para convertir el timestamp (Long) a una fecha legible
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
             HomeScreen(
@@ -182,6 +181,12 @@ fun AppNavHost(
             )
         }
 
+        composable("guia_hortalizas") {
+            GuiaHortalizasScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("profile") {
             ProfileScreen(
                 userData = googleAuthUiClient.getSignedInUser(),
@@ -203,22 +208,11 @@ fun AppNavHost(
             )
         }
 
-        composable(
-            route = "plaga_detail/{plagaId}",
-            arguments = listOf(navArgument("plagaId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val plagaId = backStackEntry.arguments?.getString("plagaId")
-            val plaga = plagasList.find { it.id == plagaId }
-            if (plaga != null) {
-                PlagaDetailScreen(plaga = plaga, onBack = { navController.popBackStack() })
-            }
-        }
-
         composable("about") {
             AboutScreen(onBack = { navController.popBackStack() })
         }
 
-        composable("consejos") { // Nueva ruta
+        composable("consejos") {
             ConsejosScreen(onNavigate = { route -> navController.navigate(route) })
         }
     }
