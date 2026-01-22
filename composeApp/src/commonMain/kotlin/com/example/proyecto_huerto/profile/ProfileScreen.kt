@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,7 +20,8 @@ import com.example.proyecto_huerto.auth.UserData
 fun ProfileScreen(
     userData: UserData?,
     onSignOut: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToAbout: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -31,6 +33,11 @@ fun ProfileScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToAbout) {
+                        Icon(Icons.Default.Info, contentDescription = "Acerca de")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -8,7 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -19,13 +18,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.proyecto_huerto.auth.GoogleAuthUiClient
-import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignInScreen
+import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.*
-import com.example.proyecto_huerto.screensimport.DiarioViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.* 
 
 @Composable
 fun AppNavHost(
@@ -43,7 +43,7 @@ fun AppNavHost(
             val context = LocalContext.current
 
             LaunchedEffect(key1 = Unit) {
-                if(googleAuthUiClient.getSignedInUser() != null) {
+                if (googleAuthUiClient.getSignedInUser() != null) {
                     navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
@@ -53,7 +53,7 @@ fun AppNavHost(
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartIntentSenderForResult(),
                 onResult = { result ->
-                    if(result.resultCode == Activity.RESULT_OK) {
+                    if (result.resultCode == Activity.RESULT_OK) {
                         lifecycleScope.launch {
                             val signInResult = googleAuthUiClient.signInWithIntent(
                                 intent = result.data ?: return@launch
@@ -65,7 +65,7 @@ fun AppNavHost(
             )
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
-                if(state.isSignInSuccessful) {
+                if (state.isSignInSuccessful) {
                     Toast.makeText(context, "Inicio de sesión correcto", Toast.LENGTH_LONG).show()
                     navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
@@ -124,7 +124,17 @@ fun AppNavHost(
         }
 
         composable("home") {
-            HomeScreen { route -> navController.navigate(route) }
+            val actividades by diarioViewModel.actividades.collectAsState()
+            // Formateador para convertir el timestamp (Long) a una fecha legible
+            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+
+            HomeScreen(
+                recentActivities = actividades.map {
+                    val formattedDate = sdf.format(Date(it.fecha))
+                    "${it.tipo} en ${it.nombreBancal}: ${it.detalle} - $formattedDate"
+                }.reversed(),
+                onNavigate = { route -> navController.navigate(route) }
+            )
         }
 
         composable("gestion_bancales") {
@@ -173,7 +183,7 @@ fun AppNavHost(
         }
 
         composable("profile") {
-             ProfileScreen(
+            ProfileScreen(
                 userData = googleAuthUiClient.getSignedInUser(),
                 onSignOut = {
                     lifecycleScope.launch {
@@ -181,8 +191,35 @@ fun AppNavHost(
                         navController.navigate("sign_in") { popUpTo(0) }
                     }
                 },
+                onBack = { navController.popBackStack() },
+                onNavigateToAbout = { navController.navigate("about") }
+            )
+        }
+
+        composable("plagas") {
+            PlagasScreen(
+                onPlagaClick = { plagaId -> navController.navigate("plaga_detail/$plagaId") },
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(
+            route = "plaga_detail/{plagaId}",
+            arguments = listOf(navArgument("plagaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val plagaId = backStackEntry.arguments?.getString("plagaId")
+            val plaga = plagasList.find { it.id == plagaId }
+            if (plaga != null) {
+                PlagaDetailScreen(plaga = plaga, onBack = { navController.popBackStack() })
+            }
+        }
+
+        composable("about") {
+            AboutScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("consejos") { // Nueva ruta
+            ConsejosScreen(onNavigate = { route -> navController.navigate(route) })
         }
     }
 }

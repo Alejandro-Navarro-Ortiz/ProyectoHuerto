@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Tarea
 import com.example.proyecto_huerto.models.Actividad
 import com.example.proyecto_huerto.models.TipoActividad
-import com.example.proyecto_huerto.screensimport.DiarioViewModel
 import com.example.proyecto_huerto.util.getCurrentEpochMillis
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone

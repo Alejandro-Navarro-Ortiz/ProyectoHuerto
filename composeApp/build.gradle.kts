@@ -52,6 +52,9 @@ kotlin {
             implementation("dev.gitlive:firebase-firestore:1.13.0")
             implementation("dev.gitlive:firebase-auth:1.13.0")
 
+
+            implementation("media.kamel:kamel-image:0.9.3")
+
             // Serialización
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)

@@ -1,16 +1,42 @@
 package com.example.proyecto_huerto.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Yard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,13 +49,19 @@ data class HomeOption(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onNavigate: (String) -> Unit) {
-    val options = listOf(
+fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
+    val navOptions = listOf(
+        HomeOption("Bancales", Icons.Filled.Yard, "gestion_bancales"),
+        HomeOption("Diario", Icons.Filled.Book, "diario_cultivo"),
+        HomeOption("Plagas", Icons.Filled.BugReport, "plagas"),
+        HomeOption("Consejos", Icons.Filled.Lightbulb, "consejos")
+    )
+
+    val cardOptions = listOf(
         HomeOption("Mis Bancales", Icons.Filled.Yard, "gestion_bancales"),
         HomeOption("Diario de Cultivo", Icons.Filled.Book, "diario_cultivo"),
         HomeOption("Plagas", Icons.Filled.BugReport, "plagas"),
         HomeOption("Consejos", Icons.Filled.Lightbulb, "consejos"),
-        HomeOption("Tareas", Icons.Filled.Checklist, "tareas")
     )
 
     Scaffold(
@@ -50,20 +82,75 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                     }
                 }
             )
+        },
+        bottomBar = {
+            NavigationBar {
+                navOptions.forEach { option ->
+                    NavigationBarItem(
+                        icon = { Icon(option.icon, contentDescription = option.title) },
+                        label = { Text(option.title) },
+                        selected = false, // La selección se gestionaría con el NavController
+                        onClick = { onNavigate(option.route) }
+                    )
+                }
+            }
         }
     ) { paddingValues ->
-        Surface(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            color = MaterialTheme.colorScheme.background
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(options) { option ->
-                    HomeOptionCard(option = option, onClick = { onNavigate(option.route) })
+            // Sección de tarjetas principales
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    HomeOptionCard(
+                        modifier = Modifier.weight(1f).height(150.dp),
+                        option = cardOptions[0],
+                        onClick = { onNavigate(cardOptions[0].route) }
+                    )
+                    HomeOptionCard(
+                        modifier = Modifier.weight(1f).height(150.dp),
+                        option = cardOptions[1],
+                        onClick = { onNavigate(cardOptions[1].route) }
+                    )
+                }
+            }
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    HomeOptionCard(
+                        modifier = Modifier.weight(1f).height(150.dp),
+                        option = cardOptions[2],
+                        onClick = { onNavigate(cardOptions[2].route) },
+                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                    HomeOptionCard(
+                        modifier = Modifier.weight(1f).height(150.dp),
+                        option = cardOptions[3],
+                        onClick = { onNavigate(cardOptions[3].route) },
+                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                }
+            }
+
+            // Sección de actividad reciente
+            if (recentActivities.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Actividad Reciente",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+
+                items(recentActivities) { activity ->
+                    RecentActivityCard(activityText = activity)
                 }
             }
         }
@@ -71,33 +158,60 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 }
 
 @Composable
-fun HomeOptionCard(option: HomeOption, onClick: () -> Unit) {
+fun HomeOptionCard(
+    option: HomeOption,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant
+) {
     Card(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = option.icon,
                 contentDescription = option.title,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(40.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = option.title,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+fun RecentActivityCard(activityText: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.History,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = activityText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }

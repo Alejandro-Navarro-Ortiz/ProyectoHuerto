@@ -1,4 +1,4 @@
-package com.example.proyecto_huerto.screensimport
+package com.example.proyecto_huerto.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
