@@ -1,5 +1,4 @@
 package com.example.proyecto_huerto.navigation
-
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,7 +29,9 @@ import java.util.*
 @Composable
 fun AppNavHost(
     googleAuthUiClient: GoogleAuthUiClient,
-    lifecycleScope: LifecycleCoroutineScope
+    lifecycleScope: LifecycleCoroutineScope,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit
 ) {
     val navController = rememberNavController()
     val bancalViewModel: BancalViewModel = viewModel()
@@ -197,7 +198,9 @@ fun AppNavHost(
                     }
                 },
                 onBack = { navController.popBackStack() },
-                onNavigateToAbout = { navController.navigate("about") }
+                onNavigateToAbout = { navController.navigate("about") },
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode
             )
         }
 
