@@ -12,6 +12,7 @@ import com.example.proyecto_huerto.util.getCurrentInstant
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
+import dev.gitlive.firebase.messaging.messaging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,6 +27,34 @@ class BancalViewModel : ViewModel() {
 
     init {
         listenToBancales()
+        saveNotificationToken()
+    }
+
+    /**
+     * CRÍTICO PARA NOTIFICACIONES AUTOMÁTICAS:
+     * Obtiene el token FCM del dispositivo y lo guarda en Firestore.
+     * Esto permite que una Cloud Function envíe notificaciones al móvil
+     * incluso si la aplicación está cerrada.
+     */
+    private fun saveNotificationToken() {
+        viewModelScope.launch {
+            auth.authStateChanged.collectLatest { user ->
+                if (user != null) {
+                    try {
+                        // En la librería gitlive-firebase actual, se usa getToken() como función suspendida
+                        val token = Firebase.messaging.getToken()
+
+                        // Guardamos el token en el documento del usuario para que el servidor lo use
+                        db.collection("usuarios").document(user.uid)
+                            .update("fcmToken" to token)
+
+                        println("DEBUG: Token FCM sincronizado con éxito: $token")
+                    } catch (e: Exception) {
+                        println("ERROR: Error al registrar token en Firestore: ${e.message}")
+                    }
+                }
+            }
+        }
     }
 
     private fun listenToBancales() {
@@ -105,7 +134,6 @@ class BancalViewModel : ViewModel() {
                     .document(bancal.id)
                     .set(bancalActualizado)
 
-                // Registro automático de siembra
                 registrarActividad(
                     tipo = TipoActividad.SIEMBRA,
                     nombreBancal = bancal.nombre,
@@ -137,7 +165,6 @@ class BancalViewModel : ViewModel() {
                     .document(bancal.id)
                     .set(bancalActualizado)
 
-                // Registro automático de riego
                 registrarActividad(
                     tipo = TipoActividad.RIEGO,
                     nombreBancal = bancal.nombre,

@@ -36,6 +36,9 @@ kotlin {
             implementation("com.google.android.gms:play-services-auth:21.2.0")
             implementation("androidx.credentials:credentials:1.2.2")
             implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+
+            // Firebase Messaging para Android
+            implementation("com.google.firebase:firebase-messaging-ktx:24.0.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -51,7 +54,7 @@ kotlin {
             // Firebase Multiplatform
             implementation("dev.gitlive:firebase-firestore:1.13.0")
             implementation("dev.gitlive:firebase-auth:1.13.0")
-
+            implementation("dev.gitlive:firebase-messaging:1.13.0") // Dependencia KMP
 
             implementation("media.kamel:kamel-image:0.9.3")
 
@@ -59,7 +62,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)
 
-            // Datetime (Usamos api para que el bridge de tiempo sea visible)
+            // Datetime
             api(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
