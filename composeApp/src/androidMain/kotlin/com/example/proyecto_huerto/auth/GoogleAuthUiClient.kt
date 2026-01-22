@@ -59,8 +59,6 @@ class GoogleAuthUiClient(
         }
     }
 
-    // --- NUEVOS MÉTODOS PARA EMAIL/PASSWORD ---
-    
     suspend fun signInWithEmail(email: String, password: String): SignInResult {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
@@ -101,7 +99,15 @@ class GoogleAuthUiClient(
         }
     }
 
-    // ------------------------------------------
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
+        return try {
+            auth.sendPasswordResetEmail(email).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
 
     suspend fun signOut() {
         try {

@@ -25,7 +25,8 @@ import proyectohuerto.composeapp.generated.resources.ic_google_logo
 fun SignInScreen(
     onSignInClick: () -> Unit,
     onLoginClick: (String, String) -> Unit,
-    onNavigateToSignUp: () -> Unit
+    onNavigateToSignUp: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -145,6 +146,14 @@ fun SignInScreen(
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
+                )
+            }
+
+            TextButton(onClick = onNavigateToForgotPassword) {
+                Text(
+                    text = "¿Has olvidado tu contraseña?",
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }

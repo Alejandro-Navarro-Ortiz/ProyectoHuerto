@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.proyecto_huerto.auth.ForgotPasswordScreen
 import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignInViewModel
@@ -96,7 +97,25 @@ fun AppNavHost(
                         signInViewModel.onSignInResult(result)
                     }
                 },
-                onNavigateToSignUp = { navController.navigate("sign_up") }
+                onNavigateToSignUp = { navController.navigate("sign_up") },
+                onNavigateToForgotPassword = { navController.navigate("forgot_password") }
+            )
+        }
+
+        composable("forgot_password") {
+            val context = LocalContext.current
+            ForgotPasswordScreen(
+                onSendPasswordResetEmail = { email ->
+                    lifecycleScope.launch {
+                        googleAuthUiClient.sendPasswordResetEmail(email).onSuccess {
+                            Toast.makeText(context, "Correo de recuperación enviado.", Toast.LENGTH_LONG).show()
+                            navController.popBackStack()
+                        }.onFailure {
+                            Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
