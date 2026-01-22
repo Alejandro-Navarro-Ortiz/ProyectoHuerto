@@ -184,6 +184,18 @@ fun AppNavHost(
 
         composable("guia_hortalizas") {
             GuiaHortalizasScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { nombre -> navController.navigate("detalle_hortaliza/$nombre") }
+            )
+        }
+
+        composable(
+            route = "detalle_hortaliza/{nombre}",
+            arguments = listOf(navArgument("nombre") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val nombre = backStackEntry.arguments?.getString("nombre")
+            DetalleHortalizaScreen(
+                nombreHortaliza = nombre ?: "",
                 onBack = { navController.popBackStack() }
             )
         }
