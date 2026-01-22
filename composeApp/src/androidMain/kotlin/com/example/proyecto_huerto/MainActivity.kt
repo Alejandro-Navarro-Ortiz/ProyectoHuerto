@@ -13,6 +13,7 @@ import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.navigation.AppNavHost
 import com.example.proyecto_huerto.ui.theme.ProyectoHuertoTheme
 import com.google.android.gms.auth.api.identity.Identity
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -32,12 +33,10 @@ class MainActivity : ComponentActivity() {
 
         // Recuperar preferencia guardada
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
-        // Si no existe la llave "dark_mode", usamos un valor nulo para identificar que debemos mirar el sistema
         val hasPreference = prefs.contains("dark_mode")
         val savedDarkMode = prefs.getBoolean("dark_mode", false)
 
         setContent {
-            // Si el usuario nunca ha tocado el switch, usamos lo que diga el sistema
             val systemInDark = isSystemInDarkTheme()
 
             if (isFirstRun) {
@@ -52,7 +51,6 @@ class MainActivity : ComponentActivity() {
                     isDarkMode = isDarkMode,
                     onToggleDarkMode = {
                         isDarkMode = !isDarkMode
-                        // Guardar la preferencia
                         prefs.edit().putBoolean("dark_mode", isDarkMode).apply()
                     }
                 )

@@ -28,7 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Bancal
 import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.Hortaliza
-import com.example.proyecto_huerto.models.hortalizasDisponibles
+import com.example.proyecto_huerto.viewmodel.HuertoUiState
+import com.example.proyecto_huerto.viewmodel.HuertoViewModel
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,15 +38,17 @@ fun DetalleBancalScreen(
     bancal: Bancal,
     onBack: () -> Unit,
     onUpdateCultivos: (List<String>, String) -> Unit,
-    onRegarCultivos: (List<String>) -> Unit
+    onRegarCultivos: (List<String>) -> Unit,
+    viewModel: HuertoViewModel
 ) {
+    val hortalizasState by viewModel.hortalizasState.collectAsState()
+
     var modoSeleccion by rememberSaveable { mutableStateOf(false) }
     var posicionesSeleccionadas by remember { mutableStateOf(emptySet<String>()) }
     var mostrarDialogoPlantas by remember { mutableStateOf(false) }
     var mostrarDialogoRiego by remember { mutableStateOf(false) }
     var justWateredPositions by remember { mutableStateOf(emptySet<String>()) }
 
-    // Estados para la validación de compatibilidad visual
     var mostrarAvisoIncompatibilidad by remember { mutableStateOf(false) }
     var plantaPendiente by remember { mutableStateOf<Hortaliza?>(null) }
     var enemigosDetectados by remember { mutableStateOf<List<Hortaliza>>(emptyList()) }
@@ -107,7 +110,9 @@ fun DetalleBancalScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -126,67 +131,87 @@ fun DetalleBancalScreen(
             Text("Dimensiones: ${bancal.ancho}x${bancal.largo}", style = MaterialTheme.typography.bodyLarge)
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(bancal.ancho.coerceAtLeast(1)),
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(bancal.ancho * bancal.largo) { index ->
-                    val fila = index / bancal.ancho
-                    val columna = index % bancal.ancho
-                    val posicion = "$fila-$columna"
-                    val cultivo = bancal.cultivos[posicion]
-                    val isSelected = posicion in posicionesSeleccionadas
-                    val isJustWatered = posicion in justWateredPositions
+            when (val state = hortalizasState) {
+                is HuertoUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is HuertoUiState.Success -> {
+                    val hortalizasDisponibles = state.data
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(bancal.ancho.coerceAtLeast(1)),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(bancal.ancho * bancal.largo) { index ->
+                            val fila = index / bancal.ancho
+                            val columna = index % bancal.ancho
+                            val posicion = "$fila-$columna"
+                            val cultivo = bancal.cultivos[posicion]
+                            val isSelected = posicion in posicionesSeleccionadas
+                            val isJustWatered = posicion in justWateredPositions
 
-                    CeldaBancal(cultivo, isSelected, isJustWatered) {
-                        if (modoSeleccion) {
-                            posicionesSeleccionadas = if (isSelected) {
-                                posicionesSeleccionadas - posicion
-                            } else {
-                                posicionesSeleccionadas + posicion
-                            }
-                        } else {
-                            posicionesSeleccionadas = setOf(posicion)
-                            if (bancal.cultivos[posicion] != null) {
-                                mostrarDialogoRiego = true
-                            } else {
-                                mostrarDialogoPlantas = true
+                            CeldaBancal(
+                                cultivo = cultivo,
+                                isSelected = isSelected,
+                                isJustWatered = isJustWatered,
+                                hortalizas = hortalizasDisponibles
+                            ) {
+                                if (modoSeleccion) {
+                                    posicionesSeleccionadas = if (isSelected) {
+                                        posicionesSeleccionadas - posicion
+                                    } else {
+                                        posicionesSeleccionadas + posicion
+                                    }
+                                } else {
+                                    posicionesSeleccionadas = setOf(posicion)
+                                    if (bancal.cultivos[posicion] != null) {
+                                        mostrarDialogoRiego = true
+                                    } else {
+                                        mostrarDialogoPlantas = true
+                                    }
+                                }
                             }
                         }
+                    }
+
+                    if (mostrarDialogoPlantas) {
+                        DialogoSeleccionHortaliza(
+                            hortalizas = hortalizasDisponibles,
+                            onDismiss = {
+                                mostrarDialogoPlantas = false
+                                posicionesSeleccionadas = emptySet()
+                            },
+                            onSelect = { hortaliza ->
+                                val nombresEnemigos = verificarIncompatibilidad(
+                                    nueva = hortaliza,
+                                    seleccionadas = posicionesSeleccionadas.toList(),
+                                    bancal = bancal
+                                )
+
+                                if (nombresEnemigos.isNotEmpty()) {
+                                    plantaPendiente = hortaliza
+                                    enemigosDetectados = hortalizasDisponibles.filter { it.nombre in nombresEnemigos }
+                                    mostrarAvisoIncompatibilidad = true
+                                    mostrarDialogoPlantas = false
+                                } else {
+                                    onUpdateCultivos(posicionesSeleccionadas.toList(), hortaliza.nombre)
+                                    mostrarDialogoPlantas = false
+                                    posicionesSeleccionadas = emptySet()
+                                }
+                            }
+                        )
+                    }
+                }
+                is HuertoUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Error: ${state.message}")
                     }
                 }
             }
         }
-    }
-
-    if (mostrarDialogoPlantas) {
-        DialogoSeleccionHortaliza(
-            hortalizas = hortalizasDisponibles,
-            onDismiss = {
-                mostrarDialogoPlantas = false
-                posicionesSeleccionadas = emptySet()
-            },
-            onSelect = { hortaliza ->
-                val nombresEnemigos = verificarIncompatibilidad(
-                    nueva = hortaliza,
-                    seleccionadas = posicionesSeleccionadas.toList(),
-                    bancal = bancal
-                )
-
-                if (nombresEnemigos.isNotEmpty()) {
-                    plantaPendiente = hortaliza
-                    enemigosDetectados = hortalizasDisponibles.filter { it.nombre in nombresEnemigos }
-                    mostrarAvisoIncompatibilidad = true
-                    mostrarDialogoPlantas = false
-                } else {
-                    onUpdateCultivos(posicionesSeleccionadas.toList(), hortaliza.nombre)
-                    mostrarDialogoPlantas = false
-                    posicionesSeleccionadas = emptySet()
-                }
-            }
-        )
     }
 
     if (mostrarAvisoIncompatibilidad && plantaPendiente != null) {
@@ -320,7 +345,13 @@ private fun verificarIncompatibilidad(nueva: Hortaliza, seleccionadas: List<Stri
 }
 
 @Composable
-fun CeldaBancal(cultivo: Cultivo?, isSelected: Boolean, isJustWatered: Boolean, onClick: () -> Unit) {
+fun CeldaBancal(
+    cultivo: Cultivo?,
+    isSelected: Boolean,
+    isJustWatered: Boolean,
+    hortalizas: List<Hortaliza>,
+    onClick: () -> Unit
+) {
     val seco = cultivo?.estaSeco ?: false
     val backgroundColor = when {
         isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
@@ -338,7 +369,7 @@ fun CeldaBancal(cultivo: Cultivo?, isSelected: Boolean, isJustWatered: Boolean, 
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (cultivo != null) {
                 Text(
-                    text = hortalizasDisponibles.find { it.nombre == cultivo.nombreHortaliza }?.icono ?: "❓",
+                    text = hortalizas.find { it.nombre == cultivo.nombreHortaliza }?.icono ?: "❓",
                     fontSize = 24.sp
                 )
             } else if (!isSelected) {

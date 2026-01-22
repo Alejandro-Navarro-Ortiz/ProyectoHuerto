@@ -21,6 +21,7 @@ credentialsPlayServicesAuth = "1.5.0"
 googleid = "1.1.1"
 navigationCompose = "2.9.6"
 firebaseFirestore = "26.0.2"
+foundation = "1.10.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -42,6 +43,7 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

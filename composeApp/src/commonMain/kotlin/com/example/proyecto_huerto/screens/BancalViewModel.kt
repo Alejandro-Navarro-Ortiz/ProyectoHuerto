@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_huerto.models.Bancal
 import com.example.proyecto_huerto.models.Cultivo
-import com.example.proyecto_huerto.models.hortalizasDisponibles
+import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.models.Actividad
 import com.example.proyecto_huerto.models.TipoActividad
-import com.example.proyecto_huerto.util.getCurrentInstant
 import com.example.proyecto_huerto.util.getCurrentEpochMillis
+import com.example.proyecto_huerto.util.getCurrentInstant
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
@@ -86,11 +86,11 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortalizaNombre: String) {
+    // Modificado para recibir el objeto Hortaliza completo
+    fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortaliza: Hortaliza) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
-                val hortaliza = hortalizasDisponibles.find { it.nombre == hortalizaNombre } ?: return@launch
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val nuevoCultivo = Cultivo(
                     nombreHortaliza = hortaliza.nombre,

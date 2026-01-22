@@ -21,8 +21,11 @@ import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignUpScreen
+import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.screens.*
+import com.example.proyecto_huerto.viewmodel.HuertoUiState
+import com.example.proyecto_huerto.viewmodel.HuertoViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,6 +40,7 @@ fun AppNavHost(
     val navController = rememberNavController()
     val bancalViewModel: BancalViewModel = viewModel()
     val diarioViewModel: DiarioViewModel = viewModel()
+    val huertoViewModel: HuertoViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "sign_in") {
         composable("sign_in") {
@@ -52,19 +56,20 @@ fun AppNavHost(
                 }
             }
 
-            val launcher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.StartIntentSenderForResult(),
-                onResult = { result ->
-                    if (result.resultCode == Activity.RESULT_OK) {
-                        lifecycleScope.launch {
-                            val signInResult = googleAuthUiClient.signInWithIntent(
-                                intent = result.data ?: return@launch
-                            )
-                            signInViewModel.onSignInResult(signInResult)
+            val launcher =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartIntentSenderForResult(),
+                    onResult = { result ->
+                        if (result.resultCode == Activity.RESULT_OK) {
+                            lifecycleScope.launch {
+                                val signInResult = googleAuthUiClient.signInWithIntent(
+                                    intent = result.data ?: return@launch
+                                )
+                                signInViewModel.onSignInResult(signInResult)
+                            }
                         }
                     }
-                }
-            )
+                )
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
@@ -75,6 +80,7 @@ fun AppNavHost(
                     signInViewModel.resetState()
                 }
             }
+
 
             LaunchedEffect(key1 = state.signInError) {
                 state.signInError?.let { error ->
@@ -177,6 +183,8 @@ fun AppNavHost(
             arguments = listOf(navArgument("bancalId") { type = NavType.StringType })
         ) { backStackEntry ->
             val bancales by bancalViewModel.bancales.collectAsState()
+            val hortalizasState by huertoViewModel.hortalizasState.collectAsState()
+
             val id = backStackEntry.arguments?.getString("bancalId")
             val bancal = id?.let { bancalId -> bancales.find { it.id == bancalId } }
 
@@ -184,12 +192,18 @@ fun AppNavHost(
                 DetalleBancalScreen(
                     bancal = bancal,
                     onBack = { navController.popBackStack() },
-                    onUpdateCultivos = { posiciones, hortaliza ->
-                        bancalViewModel.updateCultivos(bancal, posiciones, hortaliza)
+                    onUpdateCultivos = { posiciones, nombreHortaliza ->
+                        if (hortalizasState is HuertoUiState.Success) {
+                            val hortaliza = (hortalizasState as HuertoUiState.Success<List<Hortaliza>>).data.find { it.nombre == nombreHortaliza }
+                            if (hortaliza != null) {
+                                bancalViewModel.updateCultivos(bancal, posiciones, hortaliza)
+                            }
+                        }
                     },
                     onRegarCultivos = { posiciones ->
                         bancalViewModel.regarCultivos(bancal, posiciones)
-                    }
+                    },
+                    viewModel = huertoViewModel
                 )
             }
         }
@@ -204,7 +218,8 @@ fun AppNavHost(
         composable("guia_hortalizas") {
             GuiaHortalizasScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToDetail = { nombre -> navController.navigate("detalle_hortaliza/$nombre") }
+                onNavigateToDetail = { nombre -> navController.navigate("detalle_hortaliza/$nombre") },
+                viewModel = huertoViewModel
             )
         }
 
@@ -215,7 +230,8 @@ fun AppNavHost(
             val nombre = backStackEntry.arguments?.getString("nombre")
             DetalleHortalizaScreen(
                 nombreHortaliza = nombre ?: "",
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                viewModel = huertoViewModel
             )
         }
 
@@ -238,7 +254,8 @@ fun AppNavHost(
         composable("plagas") {
             PlagasScreen(
                 onPlagaClick = { plagaId -> navController.navigate("plaga_detail/$plagaId") },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                viewModel = huertoViewModel
             )
         }
 
@@ -249,7 +266,8 @@ fun AppNavHost(
             val plagaId = backStackEntry.arguments?.getString("plagaId")
             PlagaDetailScreen(
                 plagaId = plagaId ?: "",
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                viewModel = huertoViewModel
             )
         }
 
