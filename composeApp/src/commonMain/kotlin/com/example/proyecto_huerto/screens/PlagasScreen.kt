@@ -2,6 +2,7 @@ package com.example.proyecto_huerto.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -153,13 +154,17 @@ fun PlagaListItem(plaga: Plaga, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlagaDetailScreen(
-    plaga: Plaga,
+    plagaId: String,
     onBack: () -> Unit
 ) {
+    // Buscamos la plaga en la lista estática usando el ID que recibimos.
+    val plaga = plagasList.find { it.id == plagaId }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(plaga.name) },
+                // Si la plaga no se encuentra, mostramos un título adecuado.
+                title = { Text(plaga?.name ?: "Plaga no encontrada") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -172,19 +177,30 @@ fun PlagaDetailScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(16.dp)
-        ) {
-            item {
-                Column {
-                    Text(plaga.scientificName, style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(16.dp))
-                    
-                    PlagaDetailSection("Descripción", plaga.description)
-                    PlagaDetailSection("Síntomas y Daños", plaga.symptoms)
-                    PlagaDetailSection("Tratamiento Ecológico", plaga.organicTreatment)
+        if (plaga != null) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                item {
+                    Column {
+                        Text(plaga.scientificName, style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(16.dp))
+
+                        PlagaDetailSection("Descripción", plaga.description)
+                        PlagaDetailSection("Síntomas y Daños", plaga.symptoms)
+                        PlagaDetailSection("Tratamiento Ecológico", plaga.organicTreatment)
+                    }
                 }
+            }
+        } else {
+            // Si la plaga no se encuentra, mostramos un mensaje de error.
+            // Esto previene el crash de la aplicación que ocurría al no encontrar qué mostrar.
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No se encontró la información de la plaga.")
             }
         }
     }

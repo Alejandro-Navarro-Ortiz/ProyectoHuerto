@@ -223,6 +223,17 @@ fun AppNavHost(
             )
         }
 
+        composable(
+            route = "plaga_detail/{plagaId}",
+            arguments = listOf(navArgument("plagaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val plagaId = backStackEntry.arguments?.getString("plagaId")
+            PlagaDetailScreen(
+                plagaId = plagaId ?: "",
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("about") {
             AboutScreen(onBack = { navController.popBackStack() })
         }
