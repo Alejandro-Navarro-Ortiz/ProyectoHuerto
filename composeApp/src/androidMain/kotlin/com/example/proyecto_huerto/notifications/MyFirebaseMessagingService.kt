@@ -15,17 +15,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-
         val title = message.notification?.title ?: message.data["title"] ?: "Aviso del Huerto"
-        val body = message.notification?.body ?: message.data["body"] ?: "Tienes una nueva actualización."
-
+        val body = message.notification?.body ?: message.data["body"] ?: "Tienes una actualización."
         showNotification(title, body)
-    }
-
-    override fun onNewToken(token: String) {
-        super.onNewToken(token)
-        // Aquí se podría enviar el token al servidor si fuera necesario,
-        // pero lo haremos desde el ViewModel al iniciar sesión para vincularlo al usuario.
     }
 
     private fun showNotification(title: String, message: String) {
@@ -58,6 +50,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 
-        notificationManager.notify(0, notificationBuilder.build())
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

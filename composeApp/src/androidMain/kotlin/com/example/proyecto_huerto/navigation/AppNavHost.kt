@@ -1,5 +1,9 @@
 package com.example.proyecto_huerto.navigation
+
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -9,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -41,12 +46,30 @@ fun AppNavHost(
     val bancalViewModel: BancalViewModel = viewModel()
     val diarioViewModel: DiarioViewModel = viewModel()
     val huertoViewModel: HuertoViewModel = viewModel()
+    val context = LocalContext.current
+
+    // --- LÓGICA DE NOTIFICACIONES (ESTO ES LO QUE TE FALTABA) ---
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(context, "Las notificaciones están desactivadas", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+    // -------------------------------------------------------
 
     NavHost(navController = navController, startDestination = "sign_in") {
         composable("sign_in") {
             val signInViewModel = viewModel<SignInViewModel>()
             val state by signInViewModel.state.collectAsState()
-            val context = LocalContext.current
 
             LaunchedEffect(key1 = Unit) {
                 if (googleAuthUiClient.getSignedInUser() != null) {
@@ -109,7 +132,6 @@ fun AppNavHost(
         }
 
         composable("forgot_password") {
-            val context = LocalContext.current
             ForgotPasswordScreen(
                 onSendPasswordResetEmail = { email ->
                     lifecycleScope.launch {

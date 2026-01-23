@@ -30,24 +30,14 @@ class BancalViewModel : ViewModel() {
         saveNotificationToken()
     }
 
-    /**
-     * CRÍTICO PARA NOTIFICACIONES AUTOMÁTICAS:
-     * Obtiene el token FCM del dispositivo y lo guarda en Firestore.
-     * Esto permite que una Cloud Function envíe notificaciones al móvil
-     * incluso si la aplicación está cerrada.
-     */
     private fun saveNotificationToken() {
         viewModelScope.launch {
             auth.authStateChanged.collectLatest { user ->
                 if (user != null) {
                     try {
-                        // En la librería gitlive-firebase actual, se usa getToken() como función suspendida
                         val token = Firebase.messaging.getToken()
-
-                        // Guardamos el token en el documento del usuario para que el servidor lo use
                         db.collection("usuarios").document(user.uid)
                             .update("fcmToken" to token)
-
                         println("DEBUG: Token FCM sincronizado con éxito: $token")
                     } catch (e: Exception) {
                         println("ERROR: Error al registrar token en Firestore: ${e.message}")
@@ -74,7 +64,6 @@ class BancalViewModel : ViewModel() {
                             doc.data<Bancal>().copy(id = doc.id)
                         } catch (e: Exception) {
                             println("ERROR AL LEER BANCAL (${doc.id}): ${e.message}")
-                            e.printStackTrace()
                             null
                         }
                     }
@@ -115,7 +104,6 @@ class BancalViewModel : ViewModel() {
         }
     }
 
-    // Modificado para recibir el objeto Hortaliza completo
     fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortaliza: Hortaliza) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -126,10 +114,8 @@ class BancalViewModel : ViewModel() {
                     frecuenciaRiegoDias = 2,
                     ultimaVezRegado = getCurrentInstant()
                 )
-
                 posiciones.forEach { nuevosCultivos[it] = nuevoCultivo }
                 val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
-
                 db.collection("usuarios").document(user.uid).collection("bancales")
                     .document(bancal.id)
                     .set(bancalActualizado)
@@ -139,7 +125,6 @@ class BancalViewModel : ViewModel() {
                     nombreBancal = bancal.nombre,
                     detalle = "Sembrado: ${hortaliza.nombre} (${posiciones.size} celdas)"
                 )
-
             } catch (e: Exception) {
                 println("ERROR AL ACTUALIZAR EL CULTIVO: ${e.message}")
             }
@@ -152,15 +137,12 @@ class BancalViewModel : ViewModel() {
             try {
                 val cultivosActualizados = bancal.cultivos.toMutableMap()
                 val ahora = getCurrentInstant()
-
                 posiciones.forEach { pos ->
                     cultivosActualizados[pos]?.let {
                         cultivosActualizados[pos] = it.copy(ultimaVezRegado = ahora)
                     }
                 }
-
                 val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)
-
                 db.collection("usuarios").document(user.uid).collection("bancales")
                     .document(bancal.id)
                     .set(bancalActualizado)
@@ -170,7 +152,6 @@ class BancalViewModel : ViewModel() {
                     nombreBancal = bancal.nombre,
                     detalle = "Regadas ${posiciones.size} secciones"
                 )
-
             } catch (e: Exception) {
                 println("ERROR AL REGAR LOS CULTIVOS: ${e.message}")
             }
