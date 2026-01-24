@@ -17,31 +17,49 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
+/**
+ * Servicio encargado de gestionar las notificaciones remotas de Firebase (FCM).
+ * Recibe mensajes del servidor y gestiona la actualización de los tokens de dispositivo.
+ */
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
+    /**
+     * Se ejecuta cuando se recibe un mensaje de Firebase mientras la app está en segundo plano o abierta.
+     */
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
+        
+        // Extraemos el título y el cuerpo del mensaje, priorizando la notificación sobre los datos planos
         val title = message.notification?.title ?: message.data["title"] ?: "Aviso del Huerto"
         val body = message.notification?.body ?: message.data["body"] ?: "Tienes una actualización."
+        
         showNotification(title, body)
     }
 
+    /**
+     * Se llama cuando Firebase genera un nuevo token (por ejemplo, en la primera instalación).
+     * Sincronizamos este token con nuestra base de datos para poder enviar notificaciones a este usuario.
+     */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM Token", "Refreshed token: $token")
-        // Ahora llamamos al UserRepository para que guarde el token
+        
         scope.launch {
             UserRepository.updateFcmToken(token)
         }
     }
 
+    /**
+     * Crea y muestra una notificación visual en el sistema Android.
+     */
     private fun showNotification(title: String, message: String) {
         val channelId = "huerto_fcm_channel"
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        // Configuración necesaria para Android 8.0 o superior
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -51,6 +69,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
+        // Intención para abrir la app al tocar la notificación
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -68,6 +87,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 
+        // Usamos un ID basado en el tiempo para que las notificaciones no se sobrescriban
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 

@@ -17,8 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+/**
+ * Modelo de datos para representar un consejo de cultivo.
+ */
 data class Consejo(val titulo: String, val descripcion: String)
 
+/**
+ * Lista estática de consejos precargados en la aplicación.
+ * Proporciona información útil sobre riego, compostaje, rotación de cultivos, etc.
+ */
 val consejosList = listOf(
     Consejo("Riego Inteligente", "Riega tus plantas temprano en la mañana o al atardecer para minimizar la evaporación. Asegúrate de que el agua llegue a las raíces."),
     Consejo("Compostaje", "Crea tu propio compost con restos de cocina y jardín. Es un excelente fertilizante natural y reduce los residuos."),
@@ -28,6 +35,10 @@ val consejosList = listOf(
     Consejo("Asociación de Cultivos", "Algunas plantas se benefician mutuamente cuando se plantan juntas. Por ejemplo, planta zanahorias cerca de tomates para repeler algunas plagas.")
 )
 
+/**
+ * Pantalla que muestra una lista de consejos y recomendaciones para el huerto.
+ * Permite al usuario navegar por tarjetas informativas y regresar al inicio.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConsejosScreen(onNavigate: (String) -> Unit) {
@@ -56,6 +67,7 @@ fun ConsejosScreen(onNavigate: (String) -> Unit) {
             }
         }
     ) { paddingValues ->
+        // Listado vertical de consejos usando LazyColumn para optimizar el rendimiento
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -64,24 +76,33 @@ fun ConsejosScreen(onNavigate: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(consejosList) { consejo ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = consejo.titulo,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = consejo.descripcion,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                ConsejoCard(consejo)
             }
+        }
+    }
+}
+
+/**
+ * Tarjeta individual que presenta un consejo específico.
+ * @param consejo El objeto de datos que contiene el título y la descripción.
+ */
+@Composable
+private fun ConsejoCard(consejo: Consejo) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = consejo.titulo,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = consejo.descripcion,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }

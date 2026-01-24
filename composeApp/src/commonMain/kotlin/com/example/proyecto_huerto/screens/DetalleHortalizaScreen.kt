@@ -24,6 +24,11 @@ import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
 
+/**
+ * Pantalla de Detalle de Hortaliza (Ficha Técnica).
+ * Muestra información exhaustiva sobre una planta: descripción, consejos de cultivo y
+ * compatibilidades (aliados y enemigos en el huerto).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleHortalizaScreen(
@@ -46,9 +51,7 @@ fun DetalleHortalizaScreen(
         }
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
             contentAlignment = Alignment.Center
         ) {
             when (val state = hortalizasState) {
@@ -63,7 +66,7 @@ fun DetalleHortalizaScreen(
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            // Cabecera Visual
+                            // CABECERA VISUAL: Icono grande y nombre destacado
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -92,7 +95,7 @@ fun DetalleHortalizaScreen(
                             }
 
                             Column(modifier = Modifier.padding(20.dp)) {
-                                // Sección: Descripción
+                                // SECCIÓN: DESCRIPCIÓN GENERAL
                                 SectionCard(
                                     title = "Descripción General",
                                     icon = Icons.Default.Description,
@@ -107,11 +110,11 @@ fun DetalleHortalizaScreen(
 
                                 Spacer(Modifier.height(16.dp))
 
-                                // Sección: Consejos de Cultivo
+                                // SECCIÓN: CONSEJOS DE CULTIVO
                                 SectionCard(
                                     title = "Consejos Pro",
                                     icon = Icons.Default.TipsAndUpdates,
-                                    color = Color(0xFFF57C00) // Naranja profesional
+                                    color = Color(0xFFF57C00)
                                 ) {
                                     Text(
                                         text = hortaliza.consejos,
@@ -122,9 +125,9 @@ fun DetalleHortalizaScreen(
 
                                 Spacer(Modifier.height(16.dp))
 
-                                // Compatibilidad
+                                // SECCIÓN: COMPATIBILIDAD (Asociación de Cultivos)
                                 Row(modifier = Modifier.fillMaxWidth()) {
-                                    // Amigas
+                                    // Listado de aliados (Plantas compañeras beneficiosas)
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             "Aliados",
@@ -140,7 +143,7 @@ fun DetalleHortalizaScreen(
 
                                     Spacer(Modifier.width(12.dp))
 
-                                    // Enemigas
+                                    // Listado de enemigos (Plantas que se deben evitar cerca)
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             "Evitar",
@@ -173,6 +176,9 @@ fun DetalleHortalizaScreen(
     }
 }
 
+/**
+ * Tarjeta contenedora para las diferentes secciones de la ficha técnica.
+ */
 @Composable
 fun SectionCard(
     title: String,
@@ -203,6 +209,9 @@ fun SectionCard(
     }
 }
 
+/**
+ * Etiqueta compacta utilizada para listar hortalizas compatibles o incompatibles.
+ */
 @Composable
 fun CompactTag(text: String, bgColor: Color, textColor: Color) {
     Surface(

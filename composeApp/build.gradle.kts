@@ -33,6 +33,10 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.androidx.lifecycle.runtime.ktx)
+            
+            // Añadimos AppCompat para la gestión de idiomas y temas
+            implementation(libs.androidx.appcompat)
+            
             implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
             implementation("com.google.android.gms:play-services-auth:21.2.0")
             implementation("androidx.credentials:credentials:1.2.2")

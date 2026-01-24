@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mi Huerto</string>
+    
+    <!-- Perfil -->
+    <string name="profile_title">Mi Perfil</string>
+    <string name="profile_user">USUARIO</string>
+    <string name="profile_email">CORREO</string>
+    <string name="profile_dark_mode">Modo Oscuro</string>
+    <string name="profile_language">Idioma</string>
+    <string name="profile_lang_es">Español</string>
+    <string name="profile_lang_en">Inglés</string>
+    <string name="profile_sign_out">CERRAR SESIÓN</string>
+    <string name="profile_back">Volver</string>
+    <string name="profile_info">Info</string>
+    <string name="profile_change_photo">Cambiar</string>
+    <string name="profile_guest">Invitado</string>
+    <string name="profile_no_email">Sin correo</string>
+
+    <!-- Autenticación Común -->
+    <string name="auth_email">Correo electrónico</string>
+    <string name="auth_password">Contraseña</string>
+    <string name="auth_loading">Cargando...</string>
+    <string name="auth_error_generic">Ha ocurrido un error</string>
+
+    <!-- Sign In -->
+    <string name="signin_welcome">¡Bienvenido de nuevo!</string>
+    <string name="signin_button">INICIAR SESIÓN</string>
+    <string name="signin_google">Continuar con Google</string>
+    <string name="signin_forgot_password">¿Has olvidado tu contraseña?</string>
+    <string name="signin_no_account">¿No tienes cuenta? Regístrate</string>
+
+    <!-- Sign Up -->
+    <string name="signup_title">Crear Cuenta</string>
+    <string name="signup_button">REGISTRARSE</string>
+    <string name="signup_already_account">¿Ya tienes cuenta? Inicia sesión</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_title">Recuperar Contraseña</string>
+    <string name="forgot_desc">Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.</string>
+    <string name="forgot_send">ENVIAR CORREO</string>
+
+    <!-- Home -->
+    <string name="home_subtitle">Gestión Sostenible</string>
+    <string name="home_services">Servicios</string>
+    <string name="home_bancales_title">Bancales</string>
+    <string name="home_bancales_desc">Organiza tus zonas</string>
+    <string name="home_diario_title">Diario</string>
+    <string name="home_diario_desc">Bitácora de tareas</string>
+    <string name="home_guia_title">Guía</string>
+    <string name="home_guia_desc">Manual de cultivo</string>
+    <string name="home_plagas_title">Plagas</string>
+    <string name="home_plagas_desc">Control biológico</string>
+    <string name="home_tip_title">Consejo del día</string>
+    <string name="home_tip_desc">Mejora tu compost hoy</string>
+    <string name="home_recent_activity">Actividad Reciente</string>
+    <string name="home_profile_desc">Perfil</string>
+
+    <!-- Gestión Bancales -->
+    <string name="bancales_title">Mis Bancales</string>
+    <string name="bancales_empty">No tienes bancales aún</string>
+    <string name="bancales_add">Añadir Bancal</string>
+    <string name="bancales_name">Nombre del Bancal</string>
+    <string name="bancales_width">Ancho (columnas)</string>
+    <string name="bancales_height">Largo (filas)</string>
+    <string name="bancales_cancel">Cancelar</string>
+    <string name="bancales_create">Crear</string>
+    <string name="bancales_delete_confirm">¿Eliminar bancal?</string>
+</resources>

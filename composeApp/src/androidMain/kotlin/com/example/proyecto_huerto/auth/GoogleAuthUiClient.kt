@@ -12,6 +12,10 @@ import com.google.firebase.auth.auth
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.CancellationException
 
+/**
+ * Cliente encargado de gestionar la autenticación con Google (One Tap) y Firebase en Android.
+ * Encapsula la lógica de inicio de sesión, registro y cierre de sesión.
+ */
 class GoogleAuthUiClient(
     private val context: Context,
     private val oneTapClient: SignInClient
@@ -19,6 +23,10 @@ class GoogleAuthUiClient(
 
     private val auth = Firebase.auth
 
+    /**
+     * Inicia el flujo de 'One Tap Sign-In' de Google.
+     * @return Un IntentSender para lanzar la UI de Google o null si falla.
+     */
     suspend fun signIn(): IntentSender? {
         val result = try {
             oneTapClient.beginSignIn(
@@ -32,11 +40,15 @@ class GoogleAuthUiClient(
         return result?.pendingIntent?.intentSender
     }
 
+    /**
+     * Procesa el resultado devuelto por la actividad de Google.
+     */
     suspend fun signInWithIntent(intent: Intent): SignInResult {
         val credential = oneTapClient.getSignInCredentialFromIntent(intent)
         val googleIdToken = credential.googleIdToken
         val googleCredentials = GoogleAuthProvider.getCredential(googleIdToken, null)
         return try {
+            // Vincula la credencial de Google con el sistema de Auth de Firebase
             val user = auth.signInWithCredential(googleCredentials).await().user
             SignInResult(
                 data = user?.run {
@@ -59,6 +71,9 @@ class GoogleAuthUiClient(
         }
     }
 
+    /**
+     * Inicia sesión con correo electrónico y contraseña tradicionales.
+     */
     suspend fun signInWithEmail(email: String, password: String): SignInResult {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
@@ -79,6 +94,9 @@ class GoogleAuthUiClient(
         }
     }
 
+    /**
+     * Crea una nueva cuenta de usuario con email y contraseña.
+     */
     suspend fun signUpWithEmail(email: String, password: String): SignInResult {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
@@ -99,6 +117,9 @@ class GoogleAuthUiClient(
         }
     }
 
+    /**
+     * Envía un correo de recuperación de contraseña.
+     */
     suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
         return try {
             auth.sendPasswordResetEmail(email).await()
@@ -109,6 +130,9 @@ class GoogleAuthUiClient(
         }
     }
 
+    /**
+     * Cierra la sesión tanto en Google One Tap como en Firebase.
+     */
     suspend fun signOut() {
         try {
             oneTapClient.signOut().await()
@@ -119,6 +143,9 @@ class GoogleAuthUiClient(
         }
     }
 
+    /**
+     * Recupera el usuario actualmente autenticado.
+     */
     fun getSignedInUser(): UserData? = auth.currentUser?.run {
         UserData(
             userId = uid,
@@ -128,10 +155,16 @@ class GoogleAuthUiClient(
         )
     }
 
+    /**
+     * Modifica la URL de la foto de Google para obtener una resolución decente (400px en lugar de 96px).
+     */
     private fun fixImageUrlQuality(url: String?): String? {
         return url?.replace("s96-c", "s400-c")
     }
 
+    /**
+     * Construye la solicitud de inicio de sesión de Google con el Client ID del proyecto.
+     */
     private fun buildSignInRequest(): BeginSignInRequest {
         return BeginSignInRequest.Builder()
             .setGoogleIdTokenRequestOptions(

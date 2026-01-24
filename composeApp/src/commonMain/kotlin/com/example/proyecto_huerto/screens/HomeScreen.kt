@@ -16,22 +16,32 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
+/**
+ * Representa una opción de navegación en el menú principal.
+ */
 data class HomeOption(
-    val title: String,
+    val titleKey: org.jetbrains.compose.resources.StringResource,
     val icon: ImageVector,
     val route: String,
-    val description: String
+    val descriptionKey: org.jetbrains.compose.resources.StringResource
 )
 
+/**
+ * Pantalla principal de la aplicación.
+ * Ofrece acceso rápido a los servicios del huerto y muestra la actividad reciente.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
+    // Definición de las opciones del menú principal
     val navOptions = listOf(
-        HomeOption("Bancales", Icons.Filled.Yard, "gestion_bancales", "Organiza tus zonas"),
-        HomeOption("Diario", Icons.Filled.Book, "diario_cultivo", "Bitácora de tareas"),
-        HomeOption("Guía", Icons.Filled.LocalFlorist, "guia_hortalizas", "Manual de cultivo"),
-        HomeOption("Plagas", Icons.Filled.BugReport, "plagas", "Control biológico")
+        HomeOption(Res.string.home_bancales_title, Icons.Filled.Yard, "gestion_bancales", Res.string.home_bancales_desc),
+        HomeOption(Res.string.home_diario_title, Icons.Filled.Book, "diario_cultivo", Res.string.home_diario_desc),
+        HomeOption(Res.string.home_guia_title, Icons.Filled.LocalFlorist, "guia_hortalizas", Res.string.home_guia_desc),
+        HomeOption(Res.string.home_plagas_title, Icons.Filled.BugReport, "plagas", Res.string.home_plagas_desc)
     )
 
     Scaffold(
@@ -39,8 +49,8 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("Mi Huerto", style = MaterialTheme.typography.headlineLarge)
-                        Text("Gestión Sostenible", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineLarge)
+                        Text(stringResource(Res.string.home_subtitle), style = MaterialTheme.typography.labelMedium)
                     }
                 },
                 actions = {
@@ -54,7 +64,7 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Person,
-                                contentDescription = "Perfil",
+                                contentDescription = stringResource(Res.string.home_profile_desc),
                                 modifier = Modifier.padding(8.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -77,13 +87,13 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
         ) {
             item {
                 Text(
-                    "Servicios",
+                    stringResource(Res.string.home_services),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
 
-            // Grid de 2x2 Profesional
+            // Cuadrícula de servicios (2x2)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -97,6 +107,7 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                 }
             }
 
+            // Tarjeta destacada: Consejo del día
             item {
                 Card(
                     onClick = { onNavigate("consejos") },
@@ -110,17 +121,18 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                         Icon(Icons.Default.Lightbulb, null, tint = MaterialTheme.colorScheme.onPrimary)
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text("Consejo del día", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-                            Text("Mejora tu compost hoy", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                            Text(stringResource(Res.string.home_tip_title), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                            Text(stringResource(Res.string.home_tip_desc), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                         }
                     }
                 }
             }
 
+            // Sección de Actividad Reciente
             if (recentActivities.isNotEmpty()) {
                 item {
                     Text(
-                        "Actividad Reciente",
+                        stringResource(Res.string.home_recent_activity),
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -133,6 +145,9 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
     }
 }
 
+/**
+ * Tarjeta individual para cada servicio principal.
+ */
 @Composable
 fun HomeServiceCard(option: HomeOption, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
@@ -158,13 +173,16 @@ fun HomeServiceCard(option: HomeOption, modifier: Modifier = Modifier, onClick: 
                 )
             }
             Column {
-                Text(option.title, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                Text(option.description, style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(option.titleKey), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                Text(stringResource(option.descriptionKey), style = MaterialTheme.typography.labelMedium)
             }
         }
     }
 }
 
+/**
+ * Elemento de la línea de tiempo para la actividad reciente.
+ */
 @Composable
 fun TimelineActivityItem(text: String) {
     Row(

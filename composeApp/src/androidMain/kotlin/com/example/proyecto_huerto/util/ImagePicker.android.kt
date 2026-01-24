@@ -9,18 +9,24 @@ import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Implementación Android para seleccionar imágenes de la galería.
+ * Convierte la URI seleccionada en un ByteArray para su procesamiento multiplataforma.
+ */
 @Composable
 actual fun rememberImagePicker(onImagePicked: (ByteArray) -> Unit): ImagePickerLauncher {
     val context = LocalContext.current
+
+    // Launcher que abre el selector de archivos del sistema
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             try {
+                // Abrimos el flujo de datos de la URI y lo convertimos a bytes
                 context.contentResolver.openInputStream(it)?.use { inputStream ->
                     val bytes = inputStream.readBytes()
                     if (bytes.isNotEmpty()) {
-                        println("DEBUG_IMAGE: Bytes leídos correctamente (${bytes.size} bytes)")
                         onImagePicked(bytes)
                     }
                 }
@@ -33,32 +39,35 @@ actual fun rememberImagePicker(onImagePicked: (ByteArray) -> Unit): ImagePickerL
     return remember {
         object : ImagePickerLauncher {
             override fun launch() {
+                // Filtramos solo por imágenes
                 launcher.launch("image/*")
             }
         }
     }
 }
 
+/**
+ * Gestor de almacenamiento en la nube (Firebase Storage) específico para Android.
+ */
 actual class ImageStorageManager actual constructor() {
-    // Usamos la instancia por defecto configurada en google-services.json
     private val storage = FirebaseStorage.getInstance()
 
+    /**
+     * Sube un array de bytes a la carpeta 'avatars' de Firebase Storage.
+     * @return La URL pública de descarga o null si falla.
+     */
     actual suspend fun uploadImage(userId: String, imageData: ByteArray): String? {
         return try {
-            println("DEBUG_IMAGE: Intentando subida a Storage para usuario: $userId")
-
-            // Referencia al archivo
+            // Referencia única por usuario: sobreescribe la imagen anterior si existe
             val ref = storage.reference.child("avatars/$userId.jpg")
 
-            // Subida de bytes (putBytes es la forma nativa correcta)
+            // Subida asíncrona esperando el resultado con .await() de Coroutines
             ref.putBytes(imageData).await()
 
-            // Obtenemos la URL pública. El await() asegura que la URL esté lista.
+            // Obtenemos la URL de acceso público para guardarla en el perfil
             val url = ref.downloadUrl.await().toString()
-            println("DEBUG_IMAGE: SUBIDA EXITOSA. URL: $url")
             url
         } catch (e: Exception) {
-            println("DEBUG_IMAGE: ERROR EN STORAGE: ${e.message}")
             e.printStackTrace()
             null
         }

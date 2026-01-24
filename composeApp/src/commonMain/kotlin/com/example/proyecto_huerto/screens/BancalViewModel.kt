@@ -18,6 +18,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel encargado de la gestión de los bancales y cultivos.
+ * Maneja la lógica de negocio, la sincronización con Firestore y las notificaciones de riego.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class BancalViewModel(
     private val notificationScheduler: NotificationScheduler? = null
@@ -33,6 +37,9 @@ class BancalViewModel(
         saveNotificationToken()
     }
 
+    /**
+     * Obtiene y guarda el token de FCM del usuario actual para habilitar notificaciones push.
+     */
     private fun saveNotificationToken() {
         viewModelScope.launch {
             auth.authStateChanged.collectLatest { user ->
@@ -50,6 +57,9 @@ class BancalViewModel(
         }
     }
 
+    /**
+     * Escucha en tiempo real los cambios en la colección de bancales del usuario en Firestore.
+     */
     private fun listenToBancales() {
         viewModelScope.launch {
             auth.authStateChanged.flatMapLatest { user ->
@@ -77,6 +87,9 @@ class BancalViewModel(
         }
     }
 
+    /**
+     * Registra una nueva actividad (siembra, riego, etc.) en el diario del usuario.
+     */
     private fun registrarActividad(tipo: TipoActividad, nombreBancal: String, detalle: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -95,6 +108,9 @@ class BancalViewModel(
         }
     }
 
+    /**
+     * Crea un nuevo bancal en la base de datos.
+     */
     fun addBancal(nombre: String, ancho: Int, largo: Int) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -107,6 +123,10 @@ class BancalViewModel(
         }
     }
 
+    /**
+     * Actualiza la información de los cultivos en posiciones específicas de un bancal.
+     * Al sembrar, se establece una frecuencia de riego por defecto de 2 días.
+     */
     fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortaliza: Hortaliza) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -134,6 +154,10 @@ class BancalViewModel(
         }
     }
 
+    /**
+     * Actualiza la fecha de último riego para los cultivos seleccionados y
+     * programa una notificación de recordatorio para el próximo riego.
+     */
     fun regarCultivos(bancal: Bancal, posiciones: List<String>) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -145,7 +169,7 @@ class BancalViewModel(
                     cultivosActualizados[pos]?.let { cultivo ->
                         cultivosActualizados[pos] = cultivo.copy(ultimoRiego = ahora)
                         
-                        // PROGRAMAR NOTIFICACIÓN PARA EL PRÓXIMO RIEGO
+                        // Programamos la notificación local para el próximo riego
                         notificationScheduler?.scheduleRiegoNotification(
                             plantName = cultivo.nombreHortaliza,
                             daysDelay = cultivo.frecuenciaRiegoDias
@@ -169,6 +193,9 @@ class BancalViewModel(
         }
     }
 
+    /**
+     * Elimina un bancal por su ID.
+     */
     fun deleteBancal(bancalId: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {

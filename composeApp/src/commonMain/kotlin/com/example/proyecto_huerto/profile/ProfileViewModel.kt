@@ -12,14 +12,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel encargado de la lógica de la pantalla de perfil.
+ * Gestiona la obtención de datos del usuario actual y la actualización
+ * de su foto de perfil tanto en Firebase Auth como en Firestore.
+ */
 class ProfileViewModel : ViewModel() {
     private val auth = Firebase.auth
     private val db = Firebase.firestore
     private val storageManager by lazy { ImageStorageManager() }
 
+    // Estado para controlar si hay una subida de imagen en curso
     private val _isUploading = MutableStateFlow(false)
     val isUploading = _isUploading.asStateFlow()
 
+    // Estado que contiene la información del usuario actual
     private val _user = MutableStateFlow<UserData?>(null)
     val user = _user.asStateFlow()
 
@@ -27,6 +34,10 @@ class ProfileViewModel : ViewModel() {
         refreshUser()
     }
 
+    /**
+     * Sincroniza el estado local con la información del usuario autenticado en Firebase.
+     * Ajusta la calidad de la imagen si proviene de Google.
+     */
     fun refreshUser() {
         val currentUser = auth.currentUser
         _user.value = currentUser?.let {
@@ -34,6 +45,7 @@ class ProfileViewModel : ViewModel() {
                 userId = it.uid,
                 username = it.displayName ?: it.email,
                 profilePictureUrl = it.photoURL?.let { url ->
+                    // Si es de Google, solicitamos una versión de mayor tamaño
                     if (url.contains("googleusercontent.com")) {
                         url.replace("s96-c", "s400-c")
                     } else {
@@ -45,41 +57,44 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Proceso completo de actualización de foto de perfil:
+     * 1. Sube el array de bytes a Firebase Storage.
+     * 2. Actualiza la URL en el perfil de Firebase Auth.
+     * 3. Guarda la URL en la colección 'usuarios' de Firestore.
+     * 4. Actualiza el estado de la UI.
+     */
     fun uploadProfilePicture(imageData: ByteArray) {
         val userObj = auth.currentUser ?: return
         viewModelScope.launch {
             _isUploading.value = true
-            println("DEBUG_IMAGE: Iniciando proceso de subida en ViewModel...")
             try {
-                // 1. Subida a Storage
+                // 1. Subida física al almacenamiento de Firebase
                 val downloadUrl = storageManager.uploadImage(userObj.uid, imageData)
 
                 if (downloadUrl != null) {
-                    // 2. Actualizar Firebase Auth
+                    // 2. Vinculación con el perfil de autenticación
                     userObj.updateProfile(photoUrl = downloadUrl)
 
-                    // 3. Actualizar Firestore
+                    // 3. Persistencia en la base de datos de usuarios
                     db.collection("usuarios").document(userObj.uid)
                         .set(mapOf("profilePictureUrl" to downloadUrl), merge = true)
 
-                    // 4. Forzar recarga de datos de Auth
+                    // 4. Refrescar el objeto de usuario local
                     try {
                         userObj.reload()
                     } catch (e: Exception) {
                         println("DEBUG_IMAGE: Error recargando usuario: ${e.message}")
                     }
 
-                    // 5. Notificar a la UI con timestamp para evitar caché de imagen
+                    // 5. Cache busting: añadimos un timestamp para que el cargador de imágenes
+                    // (Kamel) detecte un cambio de URL y no use la imagen antigua de la caché.
                     val separator = if (downloadUrl.contains("?")) "&" else "?"
                     val uniqueUrl = "$downloadUrl${separator}t=${getCurrentEpochMillis()}"
 
                     _user.value = _user.value?.copy(profilePictureUrl = uniqueUrl)
-                    println("DEBUG_IMAGE: Proceso completado. UI notificada con: $uniqueUrl")
-                } else {
-                    println("DEBUG_IMAGE: El proceso se detuvo porque la URL fue nula")
                 }
             } catch (e: Exception) {
-                println("DEBUG_IMAGE: Error fatal en ViewModel: ${e.message}")
                 e.printStackTrace()
             } finally {
                 _isUploading.value = false

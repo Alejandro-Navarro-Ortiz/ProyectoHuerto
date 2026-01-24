@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.isEmpty
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +25,11 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
 
+/**
+ * Pantalla del Diario de Cultivo.
+ * Permite al usuario visualizar las actividades automáticas (riego, siembra) y
+ * gestionar sus propias tareas manuales filtradas por fecha mediante un calendario.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiarioScreen(
@@ -37,7 +41,7 @@ fun DiarioScreen(
     val datePickerState = rememberDatePickerState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // Usamos nuestra utilidad para obtener el tiempo actual en millis
+    // Fecha seleccionada en el calendario o fecha actual por defecto
     val selectedDate = datePickerState.selectedDateMillis ?: getCurrentEpochMillis()
 
     Scaffold(
@@ -61,6 +65,7 @@ fun DiarioScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // Selector de fecha integrado
             DatePicker(
                 state = datePickerState,
                 showModeToggle = false,
@@ -71,6 +76,7 @@ fun DiarioScreen(
 
             HorizontalDivider()
 
+            // Filtrado de registros para el día seleccionado
             val tareasDelDia = tareas.filter { isSameDay(it.fecha, selectedDate) }
             val actividadesDelDia = actividades.filter { isSameDay(it.fecha, selectedDate) }
 
@@ -78,6 +84,7 @@ fun DiarioScreen(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Sección de actividades generadas por el sistema
                 if (actividadesDelDia.isNotEmpty()) {
                     item {
                         Text("Actividades Automáticas", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
@@ -87,6 +94,7 @@ fun DiarioScreen(
                     }
                 }
 
+                // Sección de tareas creadas manualmente por el usuario
                 if (tareasDelDia.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(8.dp))
@@ -101,10 +109,11 @@ fun DiarioScreen(
                     }
                 }
 
+                // Estado vacío
                 if (tareasDelDia.isEmpty() && actividadesDelDia.isEmpty()) {
                     item {
                         Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No hay registros para este día")
+                            Text("No hay registros para este día", color = MaterialTheme.colorScheme.outline)
                         }
                     }
                 }
@@ -123,6 +132,9 @@ fun DiarioScreen(
     }
 }
 
+/**
+ * Representación visual de una actividad automática (ej: Riego).
+ */
 @Composable
 fun ActividadItem(actividad: Actividad) {
     val icon = when (actividad.tipo) {
@@ -149,6 +161,9 @@ fun ActividadItem(actividad: Actividad) {
     }
 }
 
+/**
+ * Representación visual de una tarea manual con opción de completar o eliminar.
+ */
 @Composable
 fun TareaItem(tarea: Tarea, onToggleCompletada: () -> Unit, onDelete: () -> Unit) {
     Card(
@@ -172,6 +187,9 @@ fun TareaItem(tarea: Tarea, onToggleCompletada: () -> Unit, onDelete: () -> Unit
     }
 }
 
+/**
+ * Diálogo para la creación de nuevas tareas manuales.
+ */
 @Composable
 fun AddTareaDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
     var titulo by remember { mutableStateOf("") }
@@ -204,6 +222,9 @@ fun AddTareaDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) ->
     )
 }
 
+/**
+ * Utilidad para comparar si dos marcas de tiempo pertenecen al mismo día natural.
+ */
 @OptIn(ExperimentalTime::class)
 private fun isSameDay(millis1: Long, millis2: Long): Boolean {
     val instant1 = Instant.fromEpochMilliseconds(millis1)

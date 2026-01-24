@@ -1,5 +1,6 @@
 package com.example.proyecto_huerto.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,7 +24,18 @@ import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.util.rememberImagePicker
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.Res
+import proyectohuerto.composeapp.generated.resources.*
 
+/**
+ * Pantalla de perfil de usuario mejorada con selectores de personalización.
+ * Permite gestionar:
+ * 1. Foto de perfil (Subida a Firebase).
+ * 2. Datos personales (Nombre y Email).
+ * 3. Preferencias visuales (Modo Oscuro).
+ * 4. Preferencias de idioma (Español/Inglés) mediante un menú desplegable con banderas.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -30,11 +44,14 @@ fun ProfileScreen(
     onNavigateToAbout: () -> Unit,
     isDarkMode: Boolean,
     onToggleDarkMode: () -> Unit,
+    currentLanguage: String,
+    onLanguageChange: (String) -> Unit,
     viewModel: ProfileViewModel
 ) {
     val userData by viewModel.user.collectAsState()
     val isUploading by viewModel.isUploading.collectAsState()
 
+    // Inicializador del selector de imágenes nativo (Android/iOS)
     val imagePicker = rememberImagePicker { bytes ->
         viewModel.uploadProfilePicture(bytes)
     }
@@ -42,15 +59,15 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mi Perfil", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(Res.string.profile_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.profile_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToAbout) {
-                        Icon(Icons.Default.Info, "Info")
+                        Icon(Icons.Default.Info, stringResource(Res.string.profile_info))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -68,7 +85,7 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxSize().padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // ÁREA DE FOTO (Tamaño 110.dp para que no sea gigante)
+                // SECCIÓN: FOTO DE PERFIL CON GESTIÓN DE CARGA
                 Box(
                     modifier = Modifier.size(110.dp),
                     contentAlignment = Alignment.BottomEnd
@@ -83,6 +100,7 @@ fun ProfileScreen(
                     ) {
                         val photoUrl = userData?.profilePictureUrl
                         if (!photoUrl.isNullOrBlank()) {
+                            // Usamos key para forzar la recarga si la URL cambia (evita caché)
                             key(photoUrl) {
                                 KamelImage(
                                     resource = asyncPainterResource(photoUrl),
@@ -98,6 +116,7 @@ fun ProfileScreen(
                         }
                     }
 
+                    // Indicador de carga durante la subida a Firebase Storage
                     if (isUploading) {
                         CircularProgressIndicator(
                             modifier = Modifier.fillMaxSize(),
@@ -106,7 +125,7 @@ fun ProfileScreen(
                         )
                     }
 
-                    // Botón de cámara (Surface clicable)
+                    // Botón flotante para activar el selector de cámara/galería
                     Surface(
                         onClick = { if (!isUploading) imagePicker.launch() },
                         modifier = Modifier.size(34.dp),
@@ -116,7 +135,7 @@ fun ProfileScreen(
                     ) {
                         Icon(
                             Icons.Default.PhotoCamera,
-                            contentDescription = "Cambiar",
+                            contentDescription = stringResource(Res.string.profile_change_photo),
                             modifier = Modifier.padding(8.dp),
                             tint = Color.White
                         )
@@ -125,6 +144,7 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // SECCIÓN: INFORMACIÓN DE CUENTA (Nombre y Correo)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
@@ -132,48 +152,125 @@ fun ProfileScreen(
                     elevation = CardDefaults.cardElevation(1.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        ProfileInfoRow(Icons.Default.Person, "USUARIO", userData?.username ?: "Invitado")
+                        ProfileInfoRow(
+                            Icons.Default.Person,
+                            stringResource(Res.string.profile_user),
+                            userData?.username ?: stringResource(Res.string.profile_guest)
+                        )
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
-                        ProfileInfoRow(Icons.Default.Email, "CORREO", userData?.email ?: "Sin correo")
+                        ProfileInfoRow(
+                            Icons.Default.Email,
+                            stringResource(Res.string.profile_email),
+                            userData?.email ?: stringResource(Res.string.profile_no_email)
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
+                // SECCIÓN: PREFERENCIAS (MODO OSCURO E IDIOMA)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Text("Modo Oscuro", style = MaterialTheme.typography.bodyMedium)
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        // Fila de Modo Oscuro
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(stringResource(Res.string.profile_dark_mode), style = MaterialTheme.typography.bodyMedium)
+                            }
+                            Switch(checked = isDarkMode, onCheckedChange = { onToggleDarkMode() })
                         }
-                        Switch(checked = isDarkMode, onCheckedChange = { onToggleDarkMode() })
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+                        // Selector de Idioma (Menú Desplegable)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(stringResource(Res.string.profile_language), style = MaterialTheme.typography.bodyMedium)
+                            }
+
+                            var expanded by remember { mutableStateOf(false) }
+                            val currentLangLabel = if (currentLanguage == "es") stringResource(Res.string.profile_lang_es) else stringResource(Res.string.profile_lang_en)
+
+                            Box {
+                                // Botón que activa el desplegable
+                                Surface(
+                                    onClick = { expanded = true },
+                                    modifier = Modifier.height(40.dp),
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(currentLangLabel, style = MaterialTheme.typography.bodyMedium)
+                                        Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp))
+                                    }
+                                }
+
+                                // Menú Desplegable con opciones de idioma
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.profile_lang_es)) },
+                                        onClick = {
+                                            onLanguageChange("es")
+                                            expanded = false
+                                        },
+                                        leadingIcon = { Text("🇪🇸", fontSize = 18.sp) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.profile_lang_en)) },
+                                        onClick = {
+                                            onLanguageChange("en")
+                                            expanded = false
+                                        },
+                                        leadingIcon = { Text("🇺🇸", fontSize = 18.sp) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
+                // BOTÓN DE CIERRE DE SESIÓN
                 Button(
                     onClick = onSignOut,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("CERRAR SESIÓN", fontWeight = FontWeight.Bold)
+                    Text(stringResource(Res.string.profile_sign_out), fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
 
+/**
+ * Muestra una fila de información con un diseño consistente.
+ */
 @Composable
 fun ProfileInfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -186,6 +283,9 @@ fun ProfileInfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label:
     }
 }
 
+/**
+ * Representación visual cuando el usuario no tiene una foto establecida.
+ */
 @Composable
 fun DefaultAvatar(username: String?) {
     Box(

@@ -8,12 +8,12 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -37,6 +37,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Componente principal de navegación de la aplicación para Android.
+ * Gestiona rutas, inyección de dependencias, permisos y preferencias de idioma.
+ */
 @Composable
 fun AppNavHost(
     googleAuthUiClient: GoogleAuthUiClient,
@@ -46,24 +50,44 @@ fun AppNavHost(
 ) {
     val navController = rememberNavController()
     val context = LocalContext.current
-    
-    // Inicializamos el Scheduler con el contexto actual de Android
+
+    // ESTADO DE IDIOMA PERSISTENTE: Usamos rememberSaveable para que el valor sobreviva
+    // al REINICIO de la Activity que provoca el cambio de idioma en Android.
+    var currentLanguage by rememberSaveable {
+        mutableStateOf(
+            AppCompatDelegate.getApplicationLocales().get(0)?.language ?: Locale.getDefault().language
+        )
+    }
+
+    /**
+     * Cambia el idioma de la aplicación utilizando AppCompatDelegate.
+     * Al llamar a setApplicationLocales, Android refresca la configuración global.
+     */
+    val onLanguageChange: (String) -> Unit = { newLang ->
+        if (currentLanguage != newLang) {
+            currentLanguage = newLang
+            val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(newLang)
+            AppCompatDelegate.setApplicationLocales(appLocale)
+            // Nota: La app se reiniciará automáticamente gracias al cambio en el Manifiesto,
+            // asegurando que todos los strings.xml se carguen de nuevo.
+        }
+    }
+
     val notificationScheduler = NotificationScheduler(context)
-    
-    // Pasamos el scheduler al ViewModel
+
     val bancalViewModel: BancalViewModel = viewModel(
         factory = GenericViewModelFactory { BancalViewModel(notificationScheduler) }
     )
-    
+
     val diarioViewModel: DiarioViewModel = viewModel()
     val huertoViewModel: HuertoViewModel = viewModel()
 
-    // --- LÓGICA DE NOTIFICACIONES ---
+    // Gestión de permisos de notificaciones
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (!isGranted) {
-            Toast.makeText(context, "Las notificaciones están desactivadas", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -74,9 +98,9 @@ fun AppNavHost(
             }
         }
     }
-    // -------------------------------------------------------
 
     NavHost(navController = navController, startDestination = "sign_in") {
+
         composable("sign_in") {
             val signInViewModel = viewModel<SignInViewModel>()
             val state by signInViewModel.state.collectAsState()
@@ -89,35 +113,26 @@ fun AppNavHost(
                 }
             }
 
-            val launcher =
-                rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartIntentSenderForResult(),
-                    onResult = { result ->
-                        if (result.resultCode == Activity.RESULT_OK) {
-                            lifecycleScope.launch {
-                                val signInResult = googleAuthUiClient.signInWithIntent(
-                                    intent = result.data ?: return@launch
-                                )
-                                signInViewModel.onSignInResult(signInResult)
-                            }
+            val launcher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult(),
+                onResult = { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
+                        lifecycleScope.launch {
+                            val signInResult = googleAuthUiClient.signInWithIntent(
+                                intent = result.data ?: return@launch
+                            )
+                            signInViewModel.onSignInResult(signInResult)
                         }
                     }
-                )
+                }
+            )
 
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
-                    Toast.makeText(context, "Inicio de sesión correcto", Toast.LENGTH_LONG).show()
                     navController.navigate("home") {
                         popUpTo("sign_in") { inclusive = true }
                     }
                     signInViewModel.resetState()
-                }
-            }
-
-
-            LaunchedEffect(key1 = state.signInError) {
-                state.signInError?.let { error ->
-                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                 }
             }
 
@@ -146,10 +161,7 @@ fun AppNavHost(
                 onSendPasswordResetEmail = { email ->
                     lifecycleScope.launch {
                         googleAuthUiClient.sendPasswordResetEmail(email).onSuccess {
-                            Toast.makeText(context, "Correo de recuperación enviado.", Toast.LENGTH_LONG).show()
                             navController.popBackStack()
-                        }.onFailure {
-                            Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_LONG).show()
                         }
                     }
                 },
@@ -240,33 +252,6 @@ fun AppNavHost(
             }
         }
 
-        composable("diario_cultivo") {
-            DiarioScreen(
-                viewModel = diarioViewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable("guia_hortalizas") {
-            GuiaHortalizasScreen(
-                onBack = { navController.popBackStack() },
-                onNavigateToDetail = { nombre -> navController.navigate("detalle_hortaliza/$nombre") },
-                viewModel = huertoViewModel
-            )
-        }
-
-        composable(
-            route = "detalle_hortaliza/{nombre}",
-            arguments = listOf(navArgument("nombre") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val nombre = backStackEntry.arguments?.getString("nombre")
-            DetalleHortalizaScreen(
-                nombreHortaliza = nombre ?: "",
-                onBack = { navController.popBackStack() },
-                viewModel = huertoViewModel
-            )
-        }
-
         composable("profile") {
             val profileViewModel: ProfileViewModel = viewModel()
             ProfileScreen(
@@ -280,25 +265,27 @@ fun AppNavHost(
                 onNavigateToAbout = { navController.navigate("about") },
                 isDarkMode = isDarkMode,
                 onToggleDarkMode = onToggleDarkMode,
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
                 viewModel = profileViewModel
+            )
+        }
+
+        composable("diario_cultivo") {
+            DiarioScreen(viewModel = diarioViewModel, onBack = { navController.popBackStack() })
+        }
+
+        composable("guia_hortalizas") {
+            GuiaHortalizasScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { nombre -> navController.navigate("detalle_hortaliza/$nombre") },
+                viewModel = huertoViewModel
             )
         }
 
         composable("plagas") {
             PlagasScreen(
                 onPlagaClick = { plagaId -> navController.navigate("plaga_detail/$plagaId") },
-                onBack = { navController.popBackStack() },
-                viewModel = huertoViewModel
-            )
-        }
-
-        composable(
-            route = "plaga_detail/{plagaId}",
-            arguments = listOf(navArgument("plagaId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val plagaId = backStackEntry.arguments?.getString("plagaId")
-            PlagaDetailScreen(
-                plagaId = plagaId ?: "",
                 onBack = { navController.popBackStack() },
                 viewModel = huertoViewModel
             )
@@ -315,7 +302,8 @@ fun AppNavHost(
 }
 
 /**
- * Factory genérica para ViewModels con parámetros
+ * Factory genérica para permitir la creación de ViewModels que requieren
+ * parámetros en su constructor.
  */
 class GenericViewModelFactory<T : androidx.lifecycle.ViewModel>(
     private val creator: () -> T

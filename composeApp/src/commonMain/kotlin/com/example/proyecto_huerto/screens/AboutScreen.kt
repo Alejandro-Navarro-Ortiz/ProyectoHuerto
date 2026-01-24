@@ -23,6 +23,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
+/**
+ * Pantalla informativa "Acerca de".
+ * Proporciona una guía rápida al usuario sobre las funcionalidades principales de la aplicación,
+ * explicando cómo utilizar los bancales, el diario, la guía de plagas y los consejos.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
@@ -42,6 +47,7 @@ fun AboutScreen(onBack: () -> Unit) {
             )
         }
     ) { paddingValues ->
+        // Usamos LazyColumn para que el contenido sea desplazable en pantallas pequeñas
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(16.dp)
@@ -80,6 +86,11 @@ fun AboutScreen(onBack: () -> Unit) {
     }
 }
 
+/**
+ * Componente reutilizable para mostrar una sección de la guía.
+ * @param title Título de la sección.
+ * @param content Texto descriptivo de la funcionalidad.
+ */
 @Composable
 private fun GuideSection(title: String, content: String) {
     Column(modifier = Modifier.padding(bottom = 24.dp)) {

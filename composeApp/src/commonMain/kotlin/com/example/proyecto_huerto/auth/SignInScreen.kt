@@ -3,24 +3,25 @@ package com.example.proyecto_huerto.auth
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
-import proyectohuerto.composeapp.generated.resources.Res
-import proyectohuerto.composeapp.generated.resources.fotologo
-import proyectohuerto.composeapp.generated.resources.ic_google_logo
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Pantalla de inicio de sesión principal.
+ * Permite la autenticación mediante correo/contraseña o a través de Google.
+ */
 @Composable
 fun SignInScreen(
     onSignInClick: () -> Unit,
@@ -31,130 +32,102 @@ fun SignInScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Fondo decorativo o imagen principal
+        Image(
+            painter = painterResource(Res.drawable.fotologo),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.3f
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Proyecto Huerto",
-                style = MaterialTheme.typography.headlineLarge,
+                text = stringResource(Res.string.signin_welcome),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Image(
-                painter = painterResource(Res.drawable.fotologo),
-                contentDescription = "Logo Huerto",
-                modifier = Modifier.size(160.dp)
-            )
-
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Campo de Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text(stringResource(Res.string.auth_email)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Campo de Contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(Res.string.auth_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = {
-                    if (email.isNotBlank() && password.isNotBlank()) {
-                        onLoginClick(email, password)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium,
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            // Botón "¿Olvidaste tu contraseña?"
+            TextButton(
+                onClick = onNavigateToForgotPassword,
+                modifier = Modifier.align(Alignment.End)
             ) {
                 Text(
-                    text = "Iniciar Sesión",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    text = stringResource(Res.string.signin_forgot_password),
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Botón de Inicio de Sesión Tradicional
+            Button(
+                onClick = { onLoginClick(email, password) },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(Res.string.signin_button), fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Separador o texto de registro
+            TextButton(onClick = onNavigateToSignUp) {
+                Text(stringResource(Res.string.signin_no_account))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Botón de Google (One Tap / Credential Manager)
             OutlinedButton(
                 onClick = onSignInClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outline)
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = painterResource(Res.drawable.ic_google_logo),
-                        contentDescription = "Google Logo",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Sign in with Google",
-                        style = MaterialTheme.typography.labelLarge,
+                        text = stringResource(Res.string.signin_google),
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            TextButton(onClick = onNavigateToSignUp) {
-                Text(
-                    text = "¿No tienes cuenta? Regístrate",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            TextButton(onClick = onNavigateToForgotPassword) {
-                Text(
-                    text = "¿Has olvidado tu contraseña?",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodyLarge
-                )
             }
         }
     }
