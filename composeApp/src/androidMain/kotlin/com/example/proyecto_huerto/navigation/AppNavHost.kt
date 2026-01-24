@@ -14,7 +14,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,9 +27,11 @@ import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.profile.ProfileScreen
+import com.example.proyecto_huerto.profile.ProfileViewModel
 import com.example.proyecto_huerto.screens.*
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -38,7 +39,7 @@ import java.util.*
 @Composable
 fun AppNavHost(
     googleAuthUiClient: GoogleAuthUiClient,
-    lifecycleScope: LifecycleCoroutineScope,
+    lifecycleScope: CoroutineScope,
     isDarkMode: Boolean,
     onToggleDarkMode: () -> Unit
 ) {
@@ -48,7 +49,7 @@ fun AppNavHost(
     val huertoViewModel: HuertoViewModel = viewModel()
     val context = LocalContext.current
 
-    // --- LÓGICA DE NOTIFICACIONES (ESTO ES LO QUE TE FALTABA) ---
+    // --- LÓGICA DE NOTIFICACIONES ---
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -258,8 +259,8 @@ fun AppNavHost(
         }
 
         composable("profile") {
+            val profileViewModel: ProfileViewModel = viewModel()
             ProfileScreen(
-                userData = googleAuthUiClient.getSignedInUser(),
                 onSignOut = {
                     lifecycleScope.launch {
                         googleAuthUiClient.signOut()
@@ -269,7 +270,8 @@ fun AppNavHost(
                 onBack = { navController.popBackStack() },
                 onNavigateToAbout = { navController.navigate("about") },
                 isDarkMode = isDarkMode,
-                onToggleDarkMode = onToggleDarkMode
+                onToggleDarkMode = onToggleDarkMode,
+                viewModel = profileViewModel
             )
         }
 

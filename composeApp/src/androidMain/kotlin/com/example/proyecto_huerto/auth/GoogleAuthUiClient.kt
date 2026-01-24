@@ -43,7 +43,7 @@ class GoogleAuthUiClient(
                     UserData(
                         userId = uid,
                         username = displayName,
-                        profilePictureUrl = photoUrl?.toString(),
+                        profilePictureUrl = fixImageUrlQuality(photoUrl?.toString()),
                         email = email
                     )
                 },
@@ -67,7 +67,7 @@ class GoogleAuthUiClient(
                     UserData(
                         userId = it.uid,
                         username = it.displayName ?: it.email,
-                        profilePictureUrl = it.photoUrl?.toString(),
+                        profilePictureUrl = fixImageUrlQuality(it.photoUrl?.toString()),
                         email = it.email
                     )
                 },
@@ -87,7 +87,7 @@ class GoogleAuthUiClient(
                     UserData(
                         userId = it.uid,
                         username = it.displayName ?: it.email,
-                        profilePictureUrl = it.photoUrl?.toString(),
+                        profilePictureUrl = fixImageUrlQuality(it.photoUrl?.toString()),
                         email = it.email
                     )
                 },
@@ -123,9 +123,13 @@ class GoogleAuthUiClient(
         UserData(
             userId = uid,
             username = displayName ?: email,
-            profilePictureUrl = photoUrl?.toString(),
+            profilePictureUrl = fixImageUrlQuality(photoUrl?.toString()),
             email = email
         )
+    }
+
+    private fun fixImageUrlQuality(url: String?): String? {
+        return url?.replace("s96-c", "s400-c")
     }
 
     private fun buildSignInRequest(): BeginSignInRequest {

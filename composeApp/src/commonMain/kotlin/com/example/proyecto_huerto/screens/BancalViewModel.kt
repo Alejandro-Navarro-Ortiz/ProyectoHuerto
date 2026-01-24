@@ -36,9 +36,10 @@ class BancalViewModel : ViewModel() {
                 if (user != null) {
                     try {
                         val token = Firebase.messaging.getToken()
+                        // Cambiamos 'update' por 'set(..., merge = true)' porque el documento puede no existir aún
                         db.collection("usuarios").document(user.uid)
-                            .update("fcmToken" to token)
-                        println("DEBUG: Token FCM sincronizado con éxito: $token")
+                            .set(mapOf("fcmToken" to token), merge = true)
+                        println("DEBUG: Token FCM sincronizado con éxito")
                     } catch (e: Exception) {
                         println("ERROR: Error al registrar token en Firestore: ${e.message}")
                     }
@@ -112,7 +113,7 @@ class BancalViewModel : ViewModel() {
                 val nuevoCultivo = Cultivo(
                     nombreHortaliza = hortaliza.nombre,
                     frecuenciaRiegoDias = 2,
-                    ultimaVezRegado = getCurrentInstant()
+                    ultimoRiego = getCurrentInstant()
                 )
                 posiciones.forEach { nuevosCultivos[it] = nuevoCultivo }
                 val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
@@ -139,7 +140,7 @@ class BancalViewModel : ViewModel() {
                 val ahora = getCurrentInstant()
                 posiciones.forEach { pos ->
                     cultivosActualizados[pos]?.let {
-                        cultivosActualizados[pos] = it.copy(ultimaVezRegado = ahora)
+                        cultivosActualizados[pos] = it.copy(ultimoRiego = ahora)
                     }
                 }
                 val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)

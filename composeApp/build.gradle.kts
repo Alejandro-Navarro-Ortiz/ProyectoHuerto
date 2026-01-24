@@ -31,14 +31,19 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation("androidx.navigation:navigation-compose:2.7.7")
+            implementation(libs.androidx.navigation.compose)
+            implementation(libs.androidx.lifecycle.runtime.ktx)
             implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
             implementation("com.google.android.gms:play-services-auth:21.2.0")
             implementation("androidx.credentials:credentials:1.2.2")
             implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
 
-            // Firebase Messaging para Android
+            // Firebase Messaging y Storage para Android
             implementation("com.google.firebase:firebase-messaging-ktx:24.0.0")
+            implementation("com.google.firebase:firebase-storage-ktx:21.0.0")
+
+            // Motor Ktor para Android
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,9 +59,13 @@ kotlin {
             // Firebase Multiplatform
             implementation("dev.gitlive:firebase-firestore:1.13.0")
             implementation("dev.gitlive:firebase-auth:1.13.0")
-            implementation("dev.gitlive:firebase-messaging:1.13.0") // Dependencia KMP
+            implementation("dev.gitlive:firebase-messaging:1.13.0")
+            implementation("dev.gitlive:firebase-storage:1.13.0")
 
             implementation("media.kamel:kamel-image:0.9.3")
+
+            // Core de Ktor para KMP
+            implementation(libs.ktor.client.core)
 
             // Serialización
             implementation(libs.kotlinx.serialization.core)
@@ -65,6 +74,11 @@ kotlin {
             // Datetime
             api(libs.kotlinx.datetime)
         }
+
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

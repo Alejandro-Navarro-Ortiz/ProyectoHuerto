@@ -11,12 +11,12 @@ object UserRepository {
 
     suspend fun updateFcmToken(token: String) {
         val currentUser = auth.currentUser ?: return
-        val userDocRef = firestore.collection("users").document(currentUser.uid)
+        // Cambiado de 'users' a 'usuarios' para consistencia con BancalViewModel y ProfileViewModel
+        val userDocRef = firestore.collection("usuarios").document(currentUser.uid)
 
         try {
             userDocRef.set(mapOf("fcmToken" to token), merge = true)
         } catch (e: Exception) {
-            // Manejar la excepción, por ejemplo, logueándola
             println("Error updating FCM token: ${e.message}")
         }
     }
