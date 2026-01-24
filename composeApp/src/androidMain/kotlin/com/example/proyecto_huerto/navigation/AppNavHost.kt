@@ -26,6 +26,7 @@ import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignUpScreen
 import com.example.proyecto_huerto.models.Hortaliza
+import com.example.proyecto_huerto.notifications.NotificationScheduler
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.profile.ProfileViewModel
 import com.example.proyecto_huerto.screens.*
@@ -44,10 +45,18 @@ fun AppNavHost(
     onToggleDarkMode: () -> Unit
 ) {
     val navController = rememberNavController()
-    val bancalViewModel: BancalViewModel = viewModel()
+    val context = LocalContext.current
+    
+    // Inicializamos el Scheduler con el contexto actual de Android
+    val notificationScheduler = NotificationScheduler(context)
+    
+    // Pasamos el scheduler al ViewModel
+    val bancalViewModel: BancalViewModel = viewModel(
+        factory = GenericViewModelFactory { BancalViewModel(notificationScheduler) }
+    )
+    
     val diarioViewModel: DiarioViewModel = viewModel()
     val huertoViewModel: HuertoViewModel = viewModel()
-    val context = LocalContext.current
 
     // --- LÓGICA DE NOTIFICACIONES ---
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -302,5 +311,17 @@ fun AppNavHost(
         composable("consejos") {
             ConsejosScreen(onNavigate = { route -> navController.navigate(route) })
         }
+    }
+}
+
+/**
+ * Factory genérica para ViewModels con parámetros
+ */
+class GenericViewModelFactory<T : androidx.lifecycle.ViewModel>(
+    private val creator: () -> T
+) : androidx.lifecycle.ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+        return creator() as T
     }
 }

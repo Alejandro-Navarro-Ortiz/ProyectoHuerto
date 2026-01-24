@@ -33,7 +33,13 @@ class ProfileViewModel : ViewModel() {
             UserData(
                 userId = it.uid,
                 username = it.displayName ?: it.email,
-                profilePictureUrl = it.photoURL?.replace("s96-c", "s400-c"),
+                profilePictureUrl = it.photoURL?.let { url ->
+                    if (url.contains("googleusercontent.com")) {
+                        url.replace("s96-c", "s400-c")
+                    } else {
+                        url
+                    }
+                },
                 email = it.email
             )
         }
@@ -52,17 +58,21 @@ class ProfileViewModel : ViewModel() {
                     // 2. Actualizar Firebase Auth
                     userObj.updateProfile(photoUrl = downloadUrl)
 
-                    // 3. Actualizar Firestore (colección 'usuarios' según tu proyecto)
+                    // 3. Actualizar Firestore
                     db.collection("usuarios").document(userObj.uid)
                         .set(mapOf("profilePictureUrl" to downloadUrl), merge = true)
 
-                    // 4. Forzar refresco local evitando caché
-                    // Usamos '&' porque las URLs de Storage ya contienen '?'
-                    val uniqueUrl = "$downloadUrl&t=${getCurrentEpochMillis()}"
+                    // 4. Forzar recarga de datos de Auth
+                    try {
+                        userObj.reload()
+                    } catch (e: Exception) {
+                        println("DEBUG_IMAGE: Error recargando usuario: ${e.message}")
+                    }
 
-                    userObj.reload()
+                    // 5. Notificar a la UI con timestamp para evitar caché de imagen
+                    val separator = if (downloadUrl.contains("?")) "&" else "?"
+                    val uniqueUrl = "$downloadUrl${separator}t=${getCurrentEpochMillis()}"
 
-                    // 5. Notificar a la UI inmediatamente
                     _user.value = _user.value?.copy(profilePictureUrl = uniqueUrl)
                     println("DEBUG_IMAGE: Proceso completado. UI notificada con: $uniqueUrl")
                 } else {
@@ -70,6 +80,7 @@ class ProfileViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 println("DEBUG_IMAGE: Error fatal en ViewModel: ${e.message}")
+                e.printStackTrace()
             } finally {
                 _isUploading.value = false
             }

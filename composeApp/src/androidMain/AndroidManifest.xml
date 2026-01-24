@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:allowBackup="true"
@@ -22,14 +24,17 @@
             </intent-filter>
         </activity>
 
-        <!-- AÑADE ESTO AQUÍ ABAJO -->
         <service
-            android:name=".notifications.MyFirebaseMessagingService"
+            android:name="com.example.proyecto_huerto.notifications.MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name="com.example.proyecto_huerto.notifications.RiegoReceiver"
+            android:exported="false" />
 
     </application>
 

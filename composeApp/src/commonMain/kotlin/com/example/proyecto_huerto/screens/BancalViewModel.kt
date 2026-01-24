@@ -7,6 +7,7 @@ import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.models.Actividad
 import com.example.proyecto_huerto.models.TipoActividad
+import com.example.proyecto_huerto.notifications.NotificationScheduler
 import com.example.proyecto_huerto.util.getCurrentEpochMillis
 import com.example.proyecto_huerto.util.getCurrentInstant
 import dev.gitlive.firebase.Firebase
@@ -18,7 +19,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class BancalViewModel : ViewModel() {
+class BancalViewModel(
+    private val notificationScheduler: NotificationScheduler? = null
+) : ViewModel() {
     private val _bancales = MutableStateFlow<List<Bancal>>(emptyList())
     val bancales = _bancales.asStateFlow()
 
@@ -36,7 +39,6 @@ class BancalViewModel : ViewModel() {
                 if (user != null) {
                     try {
                         val token = Firebase.messaging.getToken()
-                        // Cambiamos 'update' por 'set(..., merge = true)' porque el documento puede no existir aún
                         db.collection("usuarios").document(user.uid)
                             .set(mapOf("fcmToken" to token), merge = true)
                         println("DEBUG: Token FCM sincronizado con éxito")
@@ -138,11 +140,19 @@ class BancalViewModel : ViewModel() {
             try {
                 val cultivosActualizados = bancal.cultivos.toMutableMap()
                 val ahora = getCurrentInstant()
+                
                 posiciones.forEach { pos ->
-                    cultivosActualizados[pos]?.let {
-                        cultivosActualizados[pos] = it.copy(ultimoRiego = ahora)
+                    cultivosActualizados[pos]?.let { cultivo ->
+                        cultivosActualizados[pos] = cultivo.copy(ultimoRiego = ahora)
+                        
+                        // PROGRAMAR NOTIFICACIÓN PARA EL PRÓXIMO RIEGO
+                        notificationScheduler?.scheduleRiegoNotification(
+                            plantName = cultivo.nombreHortaliza,
+                            daysDelay = cultivo.frecuenciaRiegoDias
+                        )
                     }
                 }
+                
                 val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)
                 db.collection("usuarios").document(user.uid).collection("bancales")
                     .document(bancal.id)
