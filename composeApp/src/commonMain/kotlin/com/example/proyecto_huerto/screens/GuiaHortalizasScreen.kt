@@ -10,8 +10,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -20,24 +18,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
-import com.example.proyecto_huerto.viewmodel.HuertoViewModel
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuiaHortalizasScreen(
     onBack: () -> Unit,
     onNavigateToDetail: (String) -> Unit,
-    viewModel: HuertoViewModel
+    uiState: HuertoUiState<List<Hortaliza>>
 ) {
-    val hortalizasState by viewModel.hortalizasState.collectAsState()
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Biblioteca Botánica", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(Res.string.guia_hortalizas_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -52,7 +49,7 @@ fun GuiaHortalizasScreen(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            when (val state = hortalizasState) {
+            when (val state = uiState) {
                 is HuertoUiState.Loading -> {
                     CircularProgressIndicator()
                 }
@@ -64,7 +61,7 @@ fun GuiaHortalizasScreen(
                     ) {
                         item {
                             Text(
-                                "Selecciona un cultivo para ver su ficha técnica y consejos de expertos.",
+                                stringResource(Res.string.guia_hortalizas_subtitle),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.padding(bottom = 8.dp)
@@ -128,7 +125,7 @@ private fun HortalizaListItem(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Ficha técnica disponible",
+                    text = stringResource(Res.string.detail_sheet_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )

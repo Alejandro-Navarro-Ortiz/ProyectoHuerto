@@ -23,13 +23,10 @@ import com.example.proyecto_huerto.util.getCurrentEpochMillis
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
 
-/**
- * Pantalla del Diario de Cultivo.
- * Permite al usuario visualizar las actividades automáticas (riego, siembra) y
- * gestionar sus propias tareas manuales filtradas por fecha mediante un calendario.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiarioScreen(
@@ -41,16 +38,15 @@ fun DiarioScreen(
     val datePickerState = rememberDatePickerState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // Fecha seleccionada en el calendario o fecha actual por defecto
     val selectedDate = datePickerState.selectedDateMillis ?: getCurrentEpochMillis()
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Diario de Cultivo") },
+                title = { Text(stringResource(Res.string.diario_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -60,12 +56,11 @@ fun DiarioScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir Tarea")
+                Icon(Icons.Default.Add, contentDescription = stringResource(Res.string.bancales_add))
             }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Selector de fecha integrado
             DatePicker(
                 state = datePickerState,
                 showModeToggle = false,
@@ -76,7 +71,6 @@ fun DiarioScreen(
 
             HorizontalDivider()
 
-            // Filtrado de registros para el día seleccionado
             val tareasDelDia = tareas.filter { isSameDay(it.fecha, selectedDate) }
             val actividadesDelDia = actividades.filter { isSameDay(it.fecha, selectedDate) }
 
@@ -84,21 +78,19 @@ fun DiarioScreen(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Sección de actividades generadas por el sistema
                 if (actividadesDelDia.isNotEmpty()) {
                     item {
-                        Text("Actividades Automáticas", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text("Actividades Automáticas", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary) // Este texto podría necesitar internacionalización también
                     }
                     items(actividadesDelDia) { actividad ->
                         ActividadItem(actividad)
                     }
                 }
 
-                // Sección de tareas creadas manualmente por el usuario
                 if (tareasDelDia.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(8.dp))
-                        Text("Tareas Manuales", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text("Tareas Manuales", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary) // Y este
                     }
                     items(tareasDelDia) { tarea ->
                         TareaItem(
@@ -109,11 +101,10 @@ fun DiarioScreen(
                     }
                 }
 
-                // Estado vacío
                 if (tareasDelDia.isEmpty() && actividadesDelDia.isEmpty()) {
                     item {
                         Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No hay registros para este día", color = MaterialTheme.colorScheme.outline)
+                            Text(stringResource(Res.string.diario_no_records), color = MaterialTheme.colorScheme.outline)
                         }
                     }
                 }
@@ -132,9 +123,6 @@ fun DiarioScreen(
     }
 }
 
-/**
- * Representación visual de una actividad automática (ej: Riego).
- */
 @Composable
 fun ActividadItem(actividad: Actividad) {
     val icon = when (actividad.tipo) {
@@ -161,9 +149,6 @@ fun ActividadItem(actividad: Actividad) {
     }
 }
 
-/**
- * Representación visual de una tarea manual con opción de completar o eliminar.
- */
 @Composable
 fun TareaItem(tarea: Tarea, onToggleCompletada: () -> Unit, onDelete: () -> Unit) {
     Card(
@@ -187,9 +172,6 @@ fun TareaItem(tarea: Tarea, onToggleCompletada: () -> Unit, onDelete: () -> Unit
     }
 }
 
-/**
- * Diálogo para la creación de nuevas tareas manuales.
- */
 @Composable
 fun AddTareaDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
     var titulo by remember { mutableStateOf("") }
@@ -222,9 +204,6 @@ fun AddTareaDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) ->
     )
 }
 
-/**
- * Utilidad para comparar si dos marcas de tiempo pertenecen al mismo día natural.
- */
 @OptIn(ExperimentalTime::class)
 private fun isSameDay(millis1: Long, millis2: Long): Boolean {
     val instant1 = Instant.fromEpochMilliseconds(millis1)

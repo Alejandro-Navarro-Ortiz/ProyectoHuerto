@@ -37,10 +37,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Componente principal de navegación de la aplicación para Android.
- * Gestiona rutas, inyección de dependencias, permisos y preferencias de idioma.
- */
 @Composable
 fun AppNavHost(
     googleAuthUiClient: GoogleAuthUiClient,
@@ -51,25 +47,17 @@ fun AppNavHost(
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    // ESTADO DE IDIOMA PERSISTENTE: Usamos rememberSaveable para que el valor sobreviva
-    // al REINICIO de la Activity que provoca el cambio de idioma en Android.
     var currentLanguage by rememberSaveable {
         mutableStateOf(
             AppCompatDelegate.getApplicationLocales().get(0)?.language ?: Locale.getDefault().language
         )
     }
 
-    /**
-     * Cambia el idioma de la aplicación utilizando AppCompatDelegate.
-     * Al llamar a setApplicationLocales, Android refresca la configuración global.
-     */
     val onLanguageChange: (String) -> Unit = { newLang ->
         if (currentLanguage != newLang) {
             currentLanguage = newLang
             val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(newLang)
             AppCompatDelegate.setApplicationLocales(appLocale)
-            // Nota: La app se reiniciará automáticamente gracias al cambio en el Manifiesto,
-            // asegurando que todos los strings.xml se carguen de nuevo.
         }
     }
 
@@ -82,7 +70,6 @@ fun AppNavHost(
     val diarioViewModel: DiarioViewModel = viewModel()
     val huertoViewModel: HuertoViewModel = viewModel()
 
-    // Gestión de permisos de notificaciones
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -276,18 +263,48 @@ fun AppNavHost(
         }
 
         composable("guia_hortalizas") {
+            val hortalizasState by huertoViewModel.hortalizasState.collectAsState()
             GuiaHortalizasScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToDetail = { nombre -> navController.navigate("detalle_hortaliza/$nombre") },
-                viewModel = huertoViewModel
+                uiState = hortalizasState
+            )
+        }
+
+        composable(
+            route = "detalle_hortaliza/{hortalizaId}",
+            arguments = listOf(navArgument("hortalizaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val hortalizaId = backStackEntry.arguments?.getString("hortalizaId") ?: ""
+            val hortalizasState by huertoViewModel.hortalizasState.collectAsState()
+
+            DetalleHortalizaScreen(
+                hortalizaId = hortalizaId,
+                onBack = { navController.popBackStack() },
+                uiState = hortalizasState
             )
         }
 
         composable("plagas") {
+            val plagasState by huertoViewModel.plagasState.collectAsState()
             PlagasScreen(
                 onPlagaClick = { plagaId -> navController.navigate("plaga_detail/$plagaId") },
                 onBack = { navController.popBackStack() },
-                viewModel = huertoViewModel
+                uiState = plagasState
+            )
+        }
+
+        composable(
+            route = "plaga_detail/{plagaId}",
+            arguments = listOf(navArgument("plagaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val plagaId = backStackEntry.arguments?.getString("plagaId") ?: ""
+            val plagasState by huertoViewModel.plagasState.collectAsState()
+
+            PlagaDetailScreen(
+                plagaId = plagaId,
+                onBack = { navController.popBackStack() },
+                uiState = plagasState
             )
         }
 
@@ -301,10 +318,6 @@ fun AppNavHost(
     }
 }
 
-/**
- * Factory genérica para permitir la creación de ViewModels que requieren
- * parámetros en su constructor.
- */
 class GenericViewModelFactory<T : androidx.lifecycle.ViewModel>(
     private val creator: () -> T
 ) : androidx.lifecycle.ViewModelProvider.Factory {

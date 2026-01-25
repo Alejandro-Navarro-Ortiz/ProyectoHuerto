@@ -22,22 +22,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
-/**
- * Pantalla informativa "Acerca de".
- * Proporciona una guía rápida al usuario sobre las funcionalidades principales de la aplicación,
- * explicando cómo utilizar los bancales, el diario, la guía de plagas y los consejos.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Acerca de la Aplicación") },
+                title = { Text(stringResource(Res.string.about_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -47,50 +44,44 @@ fun AboutScreen(onBack: () -> Unit) {
             )
         }
     ) { paddingValues ->
-        // Usamos LazyColumn para que el contenido sea desplazable en pantallas pequeñas
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
                 GuideSection(
-                    title = "¡Bienvenido a Proyecto Huerto!",
-                    content = "Esta aplicación está diseñada para ser tu compañera ideal en la gestión de tu huerto ecológico y sostenible. Aquí encontrarás todo lo que necesitas para planificar, registrar y aprender."
+                    title = stringResource(Res.string.about_title),
+                    content = stringResource(Res.string.about_main_desc)
                 )
             }
             item {
                 GuideSection(
-                    title = "Mis Bancales",
-                    content = "Es el corazón de tu huerto. Aquí puedes crear y personalizar tus bancales (las zonas de cultivo). Define sus dimensiones y añade los cultivos que vas a plantar en cada uno. Visualiza tu huerto de forma gráfica y organizada."
+                    title = stringResource(Res.string.about_bancales_title),
+                    content = stringResource(Res.string.about_bancales_desc)
                 )
             }
             item {
                 GuideSection(
-                    title = "Diario de Cultivo",
-                    content = "Tu bitácora personal. Cada vez que realices una acción importante como regar, sembrar o cosechar en uno de tus bancales, el evento quedará registrado automáticamente en esta sección, con la fecha y hora exactas. ¡Así no perderás detalle del progreso de tus cultivos!"
+                    title = stringResource(Res.string.about_diario_title),
+                    content = stringResource(Res.string.about_diario_desc)
                 )
             }
             item {
                 GuideSection(
-                    title = "Guía de Plagas",
-                    content = "Una sección informativa para ayudarte a identificar y combatir las plagas más comunes de forma ecológica. Aprende a reconocer los síntomas y a aplicar tratamientos orgánicos para mantener tu huerto sano."
+                    title = stringResource(Res.string.about_plagas_title),
+                    content = stringResource(Res.string.about_plagas_desc)
                 )
             }
             item {
                 GuideSection(
-                    title = "Consejos",
-                    content = "Aquí encontrarás recomendaciones y buenas prácticas para que saques el máximo partido a tu huerto. Desde técnicas de siembra hasta cómo mejorar la calidad de tu suelo."
+                    title = stringResource(Res.string.about_consejos_title),
+                    content = stringResource(Res.string.about_consejos_desc)
                 )
             }
         }
     }
 }
 
-/**
- * Componente reutilizable para mostrar una sección de la guía.
- * @param title Título de la sección.
- * @param content Texto descriptivo de la funcionalidad.
- */
 @Composable
 private fun GuideSection(title: String, content: String) {
     Column(modifier = Modifier.padding(bottom = 24.dp)) {

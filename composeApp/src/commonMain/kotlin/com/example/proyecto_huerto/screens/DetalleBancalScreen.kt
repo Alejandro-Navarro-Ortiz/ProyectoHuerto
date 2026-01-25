@@ -15,13 +15,12 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +41,7 @@ fun DetalleBancalScreen(
     viewModel: HuertoViewModel
 ) {
     val hortalizasState by viewModel.hortalizasState.collectAsState()
+    val currentLanguage = Locale.current.language
 
     var modoSeleccion by rememberSaveable { mutableStateOf(false) }
     var posicionesSeleccionadas by remember { mutableStateOf(emptySet<String>()) }
@@ -157,7 +157,8 @@ fun DetalleBancalScreen(
                                 cultivo = cultivo,
                                 isSelected = isSelected,
                                 isJustWatered = isJustWatered,
-                                hortalizas = hortalizasDisponibles
+                                hortalizas = hortalizasDisponibles,
+                                language = currentLanguage
                             ) {
                                 if (modoSeleccion) {
                                     posicionesSeleccionadas = if (isSelected) {
@@ -180,6 +181,7 @@ fun DetalleBancalScreen(
                     if (mostrarDialogoPlantas) {
                         DialogoSeleccionHortaliza(
                             hortalizas = hortalizasDisponibles,
+                            language = currentLanguage,
                             onDismiss = {
                                 mostrarDialogoPlantas = false
                                 posicionesSeleccionadas = emptySet()
@@ -188,7 +190,8 @@ fun DetalleBancalScreen(
                                 val nombresEnemigos = verificarIncompatibilidad(
                                     nueva = hortaliza,
                                     seleccionadas = posicionesSeleccionadas.toList(),
-                                    bancal = bancal
+                                    bancal = bancal,
+                                    hortalizas = hortalizasDisponibles
                                 )
 
                                 if (nombresEnemigos.isNotEmpty()) {
@@ -215,6 +218,7 @@ fun DetalleBancalScreen(
     }
 
     if (mostrarAvisoIncompatibilidad && plantaPendiente != null) {
+        val nombrePlantaPendiente = plantaPendiente!!.nombreMostrado.getOrDefault(currentLanguage, plantaPendiente!!.nombre)
         AlertDialog(
             onDismissRequest = { mostrarAvisoIncompatibilidad = false },
             icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
@@ -243,7 +247,7 @@ fun DetalleBancalScreen(
                         // Planta que quieres poner
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(plantaPendiente!!.icono, fontSize = 40.sp)
-                            Text(plantaPendiente!!.nombre, style = MaterialTheme.typography.labelSmall)
+                            Text(nombrePlantaPendiente, style = MaterialTheme.typography.labelSmall)
                         }
 
                         Icon(
@@ -256,9 +260,10 @@ fun DetalleBancalScreen(
                         // Plantas enemigas encontradas
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             enemigosDetectados.forEach { enemigo ->
+                                val nombreEnemigo = enemigo.nombreMostrado.getOrDefault(currentLanguage, enemigo.nombre)
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(enemigo.icono, fontSize = 40.sp)
-                                    Text(enemigo.nombre, style = MaterialTheme.typography.labelSmall)
+                                    Text(nombreEnemigo, style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                         }
@@ -318,8 +323,14 @@ fun DetalleBancalScreen(
     }
 }
 
-private fun verificarIncompatibilidad(nueva: Hortaliza, seleccionadas: List<String>, bancal: Bancal): Set<String> {
+private fun verificarIncompatibilidad(
+    nueva: Hortaliza,
+    seleccionadas: List<String>,
+    bancal: Bancal,
+    hortalizas: List<Hortaliza>
+): Set<String> {
     val enemigosEncontrados = mutableSetOf<String>()
+    val nombreNueva = nueva.nombre // Usar el ID para la lógica de incompatibilidad
 
     seleccionadas.forEach { pos ->
         val partes = pos.split("-")
@@ -334,8 +345,11 @@ private fun verificarIncompatibilidad(nueva: Hortaliza, seleccionadas: List<Stri
                 val posVecina = "$nf-$nc"
 
                 bancal.cultivos[posVecina]?.let { cultivoVecino ->
-                    if (nueva.incompatibles.contains(cultivoVecino.nombreHortaliza)) {
-                        enemigosEncontrados.add(cultivoVecino.nombreHortaliza)
+                    val hortalizaVecina = hortalizas.find { it.nombre == cultivoVecino.nombreHortaliza.getOrDefault("es", "") }
+                    hortalizaVecina?.let {
+                        if (it.incompatibles.contains(nombreNueva)) {
+                            enemigosEncontrados.add(it.nombre)
+                        }
                     }
                 }
             }
@@ -350,6 +364,7 @@ fun CeldaBancal(
     isSelected: Boolean,
     isJustWatered: Boolean,
     hortalizas: List<Hortaliza>,
+    language: String,
     onClick: () -> Unit
 ) {
     val seco = cultivo?.estaSeco ?: false
@@ -368,8 +383,9 @@ fun CeldaBancal(
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (cultivo != null) {
+                val nombreCultivo = cultivo.nombreHortaliza.getOrDefault(language, cultivo.nombreHortaliza["es"] ?: "")
                 Text(
-                    text = hortalizas.find { it.nombre == cultivo.nombreHortaliza }?.icono ?: "❓",
+                    text = hortalizas.find { it.nombreMostrado.containsValue(nombreCultivo) }?.icono ?: "❓",
                     fontSize = 24.sp
                 )
             } else if (!isSelected) {
@@ -398,6 +414,7 @@ fun CeldaBancal(
 @Composable
 fun DialogoSeleccionHortaliza(
     hortalizas: List<Hortaliza>,
+    language: String,
     onDismiss: () -> Unit,
     onSelect: (Hortaliza) -> Unit
 ) {
@@ -410,6 +427,7 @@ fun DialogoSeleccionHortaliza(
                 modifier = Modifier.heightIn(max = 300.dp)
             ) {
                 items(hortalizas) { hortaliza ->
+                    val nombreMostrado = hortaliza.nombreMostrado.getOrDefault(language, hortaliza.nombre)
                     Column(
                         modifier = Modifier
                             .clickable { onSelect(hortaliza) }
@@ -417,7 +435,7 @@ fun DialogoSeleccionHortaliza(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(hortaliza.icono, fontSize = 32.sp)
-                        Text(hortaliza.nombre, style = MaterialTheme.typography.labelSmall)
+                        Text(nombreMostrado, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
                     }
                 }
             }

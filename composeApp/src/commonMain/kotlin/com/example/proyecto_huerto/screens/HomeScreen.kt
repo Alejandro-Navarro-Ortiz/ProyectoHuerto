@@ -41,7 +41,7 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
         HomeOption(Res.string.home_bancales_title, Icons.Filled.Yard, "gestion_bancales", Res.string.home_bancales_desc),
         HomeOption(Res.string.home_diario_title, Icons.Filled.Book, "diario_cultivo", Res.string.home_diario_desc),
         HomeOption(Res.string.home_guia_title, Icons.Filled.LocalFlorist, "guia_hortalizas", Res.string.home_guia_desc),
-        HomeOption(Res.string.home_plagas_title, Icons.Filled.BugReport, "plagas", Res.string.home_plagas_desc)
+        HomeOption(Res.string.guia_plagas_title, Icons.Filled.BugReport, "plagas", Res.string.guia_plagas_desc)
     )
 
     Scaffold(
@@ -64,7 +64,8 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Person,
-                                contentDescription = stringResource(Res.string.home_profile_desc),
+                                // CORREGIDO: Usar una clave de recurso que sí existe, como profile_title
+                                contentDescription = stringResource(Res.string.profile_title),
                                 modifier = Modifier.padding(8.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -121,8 +122,8 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                         Icon(Icons.Default.Lightbulb, null, tint = MaterialTheme.colorScheme.onPrimary)
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text(stringResource(Res.string.home_tip_title), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-                            Text(stringResource(Res.string.home_tip_desc), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                            Text(stringResource(Res.string.home_consejos_title), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                            Text(stringResource(Res.string.home_consejos_desc), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                         }
                     }
                 }

@@ -11,40 +11,36 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.TipsAndUpdates
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
-import com.example.proyecto_huerto.viewmodel.HuertoViewModel
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
-/**
- * Pantalla de Detalle de Hortaliza (Ficha Técnica).
- * Muestra información exhaustiva sobre una planta: descripción, consejos de cultivo y
- * compatibilidades (aliados y enemigos en el huerto).
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleHortalizaScreen(
-    nombreHortaliza: String,
+    hortalizaId: String,
     onBack: () -> Unit,
-    viewModel: HuertoViewModel
+    uiState: HuertoUiState<List<Hortaliza>>
 ) {
-    val hortalizasState by viewModel.hortalizasState.collectAsState()
+    val currentLanguage = Locale.current.language
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ficha Técnica") },
+                title = { Text(stringResource(Res.string.detail_sheet_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
                     }
                 }
             )
@@ -54,19 +50,17 @@ fun DetalleHortalizaScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            when (val state = hortalizasState) {
-                is HuertoUiState.Loading -> {
-                    CircularProgressIndicator()
-                }
+            when (val state = uiState) {
+                is HuertoUiState.Loading -> CircularProgressIndicator()
                 is HuertoUiState.Success -> {
-                    val hortaliza = state.data.find { it.nombre == nombreHortaliza }
+                    val hortaliza = state.data.find { it.nombre == hortalizaId }
+
                     if (hortaliza != null) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            // CABECERA VISUAL: Icono grande y nombre destacado
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -87,7 +81,7 @@ fun DetalleHortalizaScreen(
                                     }
                                     Spacer(Modifier.height(12.dp))
                                     Text(
-                                        text = hortaliza.nombre,
+                                        text = hortaliza.nombreMostrado[currentLanguage] ?: hortaliza.nombreMostrado["es"] ?: hortaliza.nombre,
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.ExtraBold
                                     )
@@ -95,14 +89,13 @@ fun DetalleHortalizaScreen(
                             }
 
                             Column(modifier = Modifier.padding(20.dp)) {
-                                // SECCIÓN: DESCRIPCIÓN GENERAL
                                 SectionCard(
-                                    title = "Descripción General",
+                                    title = stringResource(Res.string.detail_description),
                                     icon = Icons.Default.Description,
                                     color = MaterialTheme.colorScheme.primary
                                 ) {
                                     Text(
-                                        text = hortaliza.descripcion,
+                                        text = hortaliza.descripcion[currentLanguage] ?: hortaliza.descripcion["es"] ?: "",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -110,14 +103,13 @@ fun DetalleHortalizaScreen(
 
                                 Spacer(Modifier.height(16.dp))
 
-                                // SECCIÓN: CONSEJOS DE CULTIVO
                                 SectionCard(
-                                    title = "Consejos Pro",
+                                    title = stringResource(Res.string.detail_tips),
                                     icon = Icons.Default.TipsAndUpdates,
                                     color = Color(0xFFF57C00)
                                 ) {
                                     Text(
-                                        text = hortaliza.consejos,
+                                        text = hortaliza.consejos[currentLanguage] ?: hortaliza.consejos["es"] ?: "",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -125,35 +117,40 @@ fun DetalleHortalizaScreen(
 
                                 Spacer(Modifier.height(16.dp))
 
-                                // SECCIÓN: COMPATIBILIDAD (Asociación de Cultivos)
                                 Row(modifier = Modifier.fillMaxWidth()) {
-                                    // Listado de aliados (Plantas compañeras beneficiosas)
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            "Aliados",
+                                            stringResource(Res.string.detail_allies),
                                             style = MaterialTheme.typography.labelLarge,
                                             color = Color(0xFF388E3C),
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
                                         )
-                                        hortaliza.compatibles.forEach { amigo ->
-                                            CompactTag(amigo, Color(0xFFE8F5E9), Color(0xFF2E7D32))
+                                        hortaliza.compatibles.forEach { amigoId ->
+                                            val amigoHortaliza = state.data.find { it.nombre == amigoId }
+                                            val amigoNombre = amigoHortaliza?.let {
+                                                it.nombreMostrado[currentLanguage] ?: it.nombreMostrado["es"] ?: it.nombre
+                                            } ?: amigoId
+                                            CompactTag(amigoNombre, Color(0xFFE8F5E9), Color(0xFF2E7D32))
                                         }
                                     }
 
                                     Spacer(Modifier.width(12.dp))
 
-                                    // Listado de enemigos (Plantas que se deben evitar cerca)
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            "Evitar",
+                                            stringResource(Res.string.detail_avoid),
                                             style = MaterialTheme.typography.labelLarge,
                                             color = MaterialTheme.colorScheme.error,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
                                         )
-                                        hortaliza.incompatibles.forEach { enemigo ->
-                                            CompactTag(enemigo, Color(0xFFFFEBEE), Color(0xFFC62828))
+                                        hortaliza.incompatibles.forEach { enemigoId ->
+                                            val enemigoHortaliza = state.data.find { it.nombre == enemigoId }
+                                            val enemigoNombre = enemigoHortaliza?.let {
+                                                it.nombreMostrado[currentLanguage] ?: it.nombreMostrado["es"] ?: it.nombre
+                                            } ?: enemigoId
+                                            CompactTag(enemigoNombre, Color(0xFFFFEBEE), Color(0xFFC62828))
                                         }
                                     }
                                 }
@@ -161,7 +158,7 @@ fun DetalleHortalizaScreen(
                             }
                         }
                     } else {
-                        Text("No se encontró la información de la hortaliza.")
+                        Text(stringResource(Res.string.detail_not_found))
                     }
                 }
                 is HuertoUiState.Error -> {
@@ -176,9 +173,6 @@ fun DetalleHortalizaScreen(
     }
 }
 
-/**
- * Tarjeta contenedora para las diferentes secciones de la ficha técnica.
- */
 @Composable
 fun SectionCard(
     title: String,
@@ -209,9 +203,6 @@ fun SectionCard(
     }
 }
 
-/**
- * Etiqueta compacta utilizada para listar hortalizas compatibles o incompatibles.
- */
 @Composable
 fun CompactTag(text: String, bgColor: Color, textColor: Color) {
     Surface(

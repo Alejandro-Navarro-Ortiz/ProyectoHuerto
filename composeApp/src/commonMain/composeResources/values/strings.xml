@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mi Huerto</string>
-    
+
     <!-- Perfil -->
     <string name="profile_title">Mi Perfil</string>
     <string name="profile_user">USUARIO</string>
@@ -40,25 +40,24 @@
     <string name="forgot_desc">Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.</string>
     <string name="forgot_send">ENVIAR CORREO</string>
 
-    <!-- Home -->
+    <!-- Home y Menú Principal -->
     <string name="home_subtitle">Gestión Sostenible</string>
     <string name="home_services">Servicios</string>
     <string name="home_bancales_title">Bancales</string>
-    <string name="home_bancales_desc">Organiza tus zonas</string>
-    <string name="home_diario_title">Diario</string>
-    <string name="home_diario_desc">Bitácora de tareas</string>
-    <string name="home_guia_title">Guía</string>
-    <string name="home_guia_desc">Manual de cultivo</string>
-    <string name="home_plagas_title">Plagas</string>
-    <string name="home_plagas_desc">Control biológico</string>
-    <string name="home_tip_title">Consejo del día</string>
-    <string name="home_tip_desc">Mejora tu compost hoy</string>
+    <string name="home_bancales_desc">Organiza tus zonas de cultivo</string>
+    <string name="home_diario_title">Diario de Cultivo</string>
+    <string name="home_diario_desc">Tu bitácora de tareas</string>
+    <string name="home_guia_title">Guía de Cultivo</string>
+    <string name="home_guia_desc">Tu manual de referencia</string>
+    <string name="home_consejos_title">Consejos</string>
+    <string name="home_consejos_desc">Sabiduría para tu huerto</string>
+    <string name="home_about_title">Acerca de</string>
+    <string name="home_about_desc">Información de la app</string>
     <string name="home_recent_activity">Actividad Reciente</string>
-    <string name="home_profile_desc">Perfil</string>
 
     <!-- Gestión Bancales -->
     <string name="bancales_title">Mis Bancales</string>
-    <string name="bancales_empty">No tienes bancales aún</string>
+    <string name="bancales_empty">Aún no has creado bancales</string>
     <string name="bancales_add">Añadir Bancal</string>
     <string name="bancales_name">Nombre del Bancal</string>
     <string name="bancales_width">Ancho (columnas)</string>
@@ -66,4 +65,49 @@
     <string name="bancales_cancel">Cancelar</string>
     <string name="bancales_create">Crear</string>
     <string name="bancales_delete_confirm">¿Eliminar bancal?</string>
+
+    <!-- Guía de Cultivo y Fichas de Detalle -->
+    <string name="guia_title">Guía de Cultivo</string>
+    <string name="guia_hortalizas_title">Biblioteca Botánica</string>
+    <string name="guia_hortalizas_subtitle">Selecciona un cultivo para ver su ficha técnica y consejos de expertos.</string>
+    <string name="guia_hortalizas_desc">Fichas de todas las plantas</string>
+    <string name="guia_plagas_title">Control de Plagas</string>
+    <string name="guia_plagas_desc">Identifica y trata problemas</string>
+    <string name="detail_sheet_title">Ficha Técnica</string>
+    <string name="detail_description">Descripción General</string>
+    <string name="detail_tips">Consejos Pro</string>
+    <string name="detail_allies">Aliados</string>
+    <string name="detail_avoid">Evitar</string>
+    <string name="detail_not_found">Hortaliza no encontrada</string>
+
+    <!-- Consejos Screen -->
+    <string name="consejos_screen_title">Consejos para tu Huerto</string>
+    <string name="consejos_riego_title">Riego Inteligente</string>
+    <string name="consejos_riego_desc">Riega tus plantas temprano en la mañana o al atardecer para minimizar la evaporación. Asegúrate de que el agua llegue a las raíces.</string>
+    <string name="consejos_compost_title">Compostaje</string>
+    <string name="consejos_compost_desc">Crea tu propio compost con restos de cocina y jardín. Es un excelente fertilizante natural y reduce los residuos.</string>
+    <string name="consejos_rotacion_title">Rotación de Cultivos</string>
+    <string name="consejos_rotacion_desc">No plantes lo mismo en el mismo lugar cada año. La rotación ayuda a prevenir plagas y enfermedades del suelo.</string>
+    <string name="consejos_plagas_title">Control de Plagas Natural</string>
+    <string name="consejos_plagas_desc">Utiliza insectos beneficiosos como mariquitas o plantas repelentes como la albahaca para controlar las plagas sin químicos.</string>
+    <string name="consejos_mulching_title">Mulching o Acolchado</string>
+    <string name="consejos_mulching_desc">Cubre el suelo alrededor de tus plantas con paja, hojas secas o corteza. Ayuda a retener la humedad, suprime las malas hierbas y mejora la salud del suelo.</string>
+    <string name="consejos_asociacion_title">Asociación de Cultivos</string>
+    <string name="consejos_asociacion_desc">Algunas plantas se benefician mutuamente cuando se plantan juntas. Por ejemplo, planta zanahorias cerca de tomates para repeler algunas plagas.</string>
+
+    <!-- Diario Screen -->
+    <string name="diario_title">Diario de Cultivo</string>
+    <string name="diario_no_records">No hay registros para este día</string>
+
+    <!-- About Screen -->
+    <string name="about_title">Acerca de Proyecto Huerto</string>
+    <string name="about_main_desc">Esta aplicación está diseñada para ser tu compañera ideal en la gestión de tu huerto ecológico y sostenible. Aquí encontrarás todo lo que necesitas para planificar, registrar y aprender.</string>
+    <string name="about_bancales_title">Mis Bancales</string>
+    <string name="about_bancales_desc">Es el corazón de tu huerto. Aquí puedes crear y personalizar tus bancales (las zonas de cultivo). Define sus dimensiones y añade los cultivos que vas a plantar en cada uno. Visualiza tu huerto de forma gráfica y organizada.</string>
+    <string name="about_diario_title">Diario de Cultivo</string>
+    <string name="about_diario_desc">Tu bitácora personal. Cada vez que realices una acción importante como regar, sembrar o cosechar en uno de tus bancales, el evento quedará registrado automáticamente en esta sección, con la fecha y hora exactas. ¡Así no perderás detalle del progreso de tus cultivos!</string>
+    <string name="about_plagas_title">Guía de Plagas</string>
+    <string name="about_plagas_desc">Una sección informativa para ayudarte a identificar y combatir las plagas más comunes de forma ecológica. Aprende a reconocer los síntomas y a aplicar tratamientos orgánicos para mantener tu huerto sano.</string>
+    <string name="about_consejos_title">Consejos</string>
+    <string name="about_consejos_desc">Aquí encontrarás recomendaciones y buenas prácticas para que saques el máximo partido a tu huerto. Desde técnicas de siembra hasta cómo mejorar la calidad del suelo, esta sección te guiará en cada paso.</string>
 </resources>

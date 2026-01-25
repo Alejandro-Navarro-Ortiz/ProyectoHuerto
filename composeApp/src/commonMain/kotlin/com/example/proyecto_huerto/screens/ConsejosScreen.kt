@@ -16,36 +16,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
-/**
- * Modelo de datos para representar un consejo de cultivo.
- */
 data class Consejo(val titulo: String, val descripcion: String)
 
-/**
- * Lista estática de consejos precargados en la aplicación.
- * Proporciona información útil sobre riego, compostaje, rotación de cultivos, etc.
- */
-val consejosList = listOf(
-    Consejo("Riego Inteligente", "Riega tus plantas temprano en la mañana o al atardecer para minimizar la evaporación. Asegúrate de que el agua llegue a las raíces."),
-    Consejo("Compostaje", "Crea tu propio compost con restos de cocina y jardín. Es un excelente fertilizante natural y reduce los residuos."),
-    Consejo("Rotación de Cultivos", "No plantes lo mismo en el mismo lugar cada año. La rotación ayuda a prevenir plagas y enfermedades del suelo."),
-    Consejo("Control de Plagas Natural", "Utiliza insectos beneficiosos como mariquitas o plantas repelentes como la albahaca para controlar las plagas sin químicos."),
-    Consejo("Mulching o Acolchado", "Cubre el suelo alrededor de tus plantas con paja, hojas secas o corteza. Ayuda a retener la humedad, suprime las malas hierbas y mejora la salud del suelo."),
-    Consejo("Asociación de Cultivos", "Algunas plantas se benefician mutuamente cuando se plantan juntas. Por ejemplo, planta zanahorias cerca de tomates para repeler algunas plagas.")
-)
-
-/**
- * Pantalla que muestra una lista de consejos y recomendaciones para el huerto.
- * Permite al usuario navegar por tarjetas informativas y regresar al inicio.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConsejosScreen(onNavigate: (String) -> Unit) {
+    val consejosList = listOf(
+        Consejo(stringResource(Res.string.consejos_riego_title), stringResource(Res.string.consejos_riego_desc)),
+        Consejo(stringResource(Res.string.consejos_compost_title), stringResource(Res.string.consejos_compost_desc)),
+        Consejo(stringResource(Res.string.consejos_rotacion_title), stringResource(Res.string.consejos_rotacion_desc)),
+        Consejo(stringResource(Res.string.consejos_plagas_title), stringResource(Res.string.consejos_plagas_desc)),
+        Consejo(stringResource(Res.string.consejos_mulching_title), stringResource(Res.string.consejos_mulching_desc)),
+        Consejo(stringResource(Res.string.consejos_asociacion_title), stringResource(Res.string.consejos_asociacion_desc))
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Consejos para tu Huerto") },
+                title = { Text(stringResource(Res.string.consejos_screen_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -60,14 +51,13 @@ fun ConsejosScreen(onNavigate: (String) -> Unit) {
                 IconButton(onClick = { onNavigate("home") }) {
                     Icon(
                         imageVector = Icons.Default.Home,
-                        contentDescription = "Inicio"
+                        contentDescription = stringResource(Res.string.home_diario_title) // Reutilizamos un string existente para "Inicio"
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
     ) { paddingValues ->
-        // Listado vertical de consejos usando LazyColumn para optimizar el rendimiento
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,10 +72,6 @@ fun ConsejosScreen(onNavigate: (String) -> Unit) {
     }
 }
 
-/**
- * Tarjeta individual que presenta un consejo específico.
- * @param consejo El objeto de datos que contiene el título y la descripción.
- */
 @Composable
 private fun ConsejoCard(consejo: Consejo) {
     Card(

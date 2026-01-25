@@ -5,36 +5,36 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.proyecto_huerto.models.Plaga
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
-import com.example.proyecto_huerto.viewmodel.HuertoViewModel
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlagasScreen(
     onPlagaClick: (String) -> Unit,
     onBack: () -> Unit,
-    viewModel: HuertoViewModel
+    uiState: HuertoUiState<List<Plaga>>
 ) {
-    val plagasState by viewModel.plagasState.collectAsState()
+    val currentLanguage = Locale.current.language
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Guía de Plagas") },
+                title = { Text(stringResource(Res.string.guia_plagas_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -50,7 +50,7 @@ fun PlagasScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            when (val state = plagasState) {
+            when (val state = uiState) {
                 is HuertoUiState.Loading -> {
                     CircularProgressIndicator()
                 }
@@ -61,13 +61,15 @@ fun PlagasScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(state.data) { plaga ->
-                            PlagaListItem(plaga = plaga, onClick = { onPlagaClick(plaga.id) })
+                            PlagaListItem(plaga, currentLanguage) {
+                                onPlagaClick(plaga.id)
+                            }
                         }
                     }
                 }
                 is HuertoUiState.Error -> {
                     Text(
-                        text = "Error al cargar las plagas: ${state.message}",
+                        text = stringResource(Res.string.auth_error_generic) + ": ${state.message}",
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(16.dp)
@@ -79,7 +81,7 @@ fun PlagasScreen(
 }
 
 @Composable
-fun PlagaListItem(plaga: Plaga, onClick: () -> Unit) {
+private fun PlagaListItem(plaga: Plaga, language: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -97,9 +99,18 @@ fun PlagaListItem(plaga: Plaga, onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.width(16.dp))
-            Column {
-                Text(text = plaga.name, style = MaterialTheme.typography.titleLarge)
-                Text(text = plaga.scientificName, style = MaterialTheme.typography.bodyMedium)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = plaga.name[language] ?: plaga.name["es"] ?: plaga.id,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                plaga.scientificName[language]?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -110,28 +121,21 @@ fun PlagaListItem(plaga: Plaga, onClick: () -> Unit) {
 fun PlagaDetailScreen(
     plagaId: String,
     onBack: () -> Unit,
-    viewModel: HuertoViewModel
+    uiState: HuertoUiState<List<Plaga>>
 ) {
-    val plagasState by viewModel.plagasState.collectAsState()
-    var plaga: Plaga? = null
+    val currentLanguage = Locale.current.language
 
-    if (plagasState is HuertoUiState.Success) {
-        plaga = (plagasState as HuertoUiState.Success<List<Plaga>>).data.find { it.id == plagaId }
-    }
+    val plaga = (uiState as? HuertoUiState.Success)?.data?.find { it.id == plagaId }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(plaga?.name ?: "Cargando...") },
+                title = { Text(plaga?.name?.get(currentLanguage) ?: plaga?.name?.get("es") ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                }
             )
         }
     ) { paddingValues ->
@@ -141,56 +145,52 @@ fun PlagaDetailScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            when (plagasState) {
-                is HuertoUiState.Loading -> {
-                    CircularProgressIndicator()
-                }
-                is HuertoUiState.Success -> {
-                    if (plaga != null) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp)
-                        ) {
-                            item {
-                                Column {
-                                    Text(plaga.scientificName, style = MaterialTheme.typography.titleMedium)
-                                    Spacer(Modifier.height(16.dp))
+            if (plaga != null) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp)
+                ) {
+                    item {
+                        val scientificName = plaga.scientificName[currentLanguage] ?: plaga.scientificName["es"] ?: ""
+                        val description = plaga.description[currentLanguage] ?: plaga.description["es"] ?: ""
+                        val symptoms = plaga.symptoms[currentLanguage] ?: plaga.symptoms["es"] ?: ""
+                        val organicTreatment = plaga.organicTreatment[currentLanguage] ?: plaga.organicTreatment["es"] ?: ""
 
-                                    PlagaDetailSection("Descripción", plaga.description)
-                                    PlagaDetailSection("Síntomas y Daños", plaga.symptoms)
-                                    PlagaDetailSection("Tratamiento Ecológico", plaga.organicTreatment)
-                                }
+                        Column {
+                            if (scientificName.isNotBlank()) {
+                                Text(scientificName, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.height(16.dp))
                             }
+                            PlagaDetailSection("Descripción", description)
+                            PlagaDetailSection("Síntomas y Daños", symptoms)
+                            PlagaDetailSection("Tratamiento Ecológico", organicTreatment)
                         }
-                    } else {
-                        Text("No se encontró la información de la plaga.")
                     }
                 }
-                is HuertoUiState.Error -> {
-                    Text(
-                        text = "Error al cargar la plaga.",
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            } else if (uiState is HuertoUiState.Loading) {
+                CircularProgressIndicator()
+            } else {
+                Text("Plaga no encontrada", textAlign = TextAlign.Center)
             }
         }
     }
 }
 
 @Composable
-fun PlagaDetailSection(title: String, content: String) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Text(
-            text = content,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Justify
-        )
+private fun PlagaDetailSection(title: String, content: String) {
+    if (content.isNotBlank()) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = content,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Justify
+            )
+        }
     }
 }

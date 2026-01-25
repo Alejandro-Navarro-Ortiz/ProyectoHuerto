@@ -12,10 +12,18 @@ import kotlin.time.ExperimentalTime
 /**
  * Representa una instancia real de una planta sembrada en un bancal.
  * Gestiona el estado vital de la planta, específicamente su ciclo de riego.
+ *
+ * MODIFICACIÓN PARA INTERNACIONALIZACIÓN:
+ * - 'nombreHortaliza' y 'descripcion' ahora son mapas para soportar múltiples idiomas.
+ *   Esto permite que la información obtenida de Firebase se muestre en el idioma
+ *   seleccionado por el usuario en la aplicación.
  */
 @Serializable
 data class Cultivo(
-    val nombreHortaliza: String, // Referencia al nombre en el catálogo de Hortalizas
+    // Mapa para nombres en diferentes idiomas (ej: "es" -> "Tomate", "en" -> "Tomato")
+    val nombreHortaliza: Map<String, String> = emptyMap(),
+    // Mapa para descripciones en diferentes idiomas
+    val descripcion: Map<String, String> = emptyMap(),
     val frecuenciaRiegoDias: Int, // Cada cuántos días se recomienda regar
     @Contextual
     val ultimoRiego: Instant? = null // Fecha y hora exacta del último riego registrado

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">My Garden</string>
-    
+
     <!-- Profile -->
     <string name="profile_title">My Profile</string>
     <string name="profile_user">USER</string>
     <string name="profile_email">EMAIL</string>
     <string name="profile_dark_mode">Dark Mode</string>
+    <string name="profile_language">Language</string>
+    <string name="profile_lang_es">Spanish</string>
+    <string name="profile_lang_en">English</string>
     <string name="profile_sign_out">SIGN OUT</string>
     <string name="profile_back">Back</string>
     <string name="profile_info">Info</string>
@@ -36,4 +39,75 @@
     <string name="forgot_title">Recover Password</string>
     <string name="forgot_desc">Enter your email and we will send you a link to reset your password.</string>
     <string name="forgot_send">SEND EMAIL</string>
+
+    <!-- Home & Main Menu -->
+    <string name="home_subtitle">Sustainable Management</string>
+    <string name="home_services">Services</string>
+    <string name="home_bancales_title">Garden Beds</string>
+    <string name="home_bancales_desc">Organize your growing areas</string>
+    <string name="home_diario_title">Gardening Log</string>
+    <string name="home_diario_desc">Your task log</string>
+    <string name="home_guia_title">Growing Guide</string>
+    <string name="home_guia_desc">Your reference manual</string>
+    <string name="home_consejos_title">Tips</string>
+    <string name="home_consejos_desc">Wisdom for your garden</string>
+    <string name="home_about_title">About</string>
+    <string name="home_about_desc">App information</string>
+    <string name="home_recent_activity">Recent Activity</string>
+
+    <!-- Garden Beds Management -->
+    <string name="bancales_title">My Garden Beds</string>
+    <string name="bancales_empty">You haven\'t created any garden beds yet</string>
+    <string name="bancales_add">Add Garden Bed</string>
+    <string name="bancales_name">Garden Bed Name</string>
+    <string name="bancales_width">Width (columns)</string>
+    <string name="bancales_height">Length (rows)</string>
+    <string name="bancales_cancel">Cancel</string>
+    <string name="bancales_create">Create</string>
+    <string name="bancales_delete_confirm">Delete garden bed?</string>
+
+    <!-- Growing Guide & Detail Sheets -->
+    <string name="guia_title">Growing Guide</string>
+    <string name="guia_hortalizas_title">Botanical Library</string>
+    <string name="guia_hortalizas_subtitle">Select a crop to see its technical sheet and expert tips.</string>
+    <string name="guia_hortalizas_desc">Datasheets for all plants</string>
+    <string name="guia_plagas_title">Pest Control</string>
+    <string name="guia_plagas_desc">Identify and treat problems</string>
+    <string name="detail_sheet_title">Technical Sheet</string>
+    <string name="detail_description">General Description</string>
+    <string name="detail_tips">Pro Tips</string>
+    <string name="detail_allies">Allies</string>
+    <string name="detail_avoid">Avoid</string>
+    <string name="detail_not_found">Vegetable not found</string>
+
+    <!-- Consejos Screen -->
+    <string name="consejos_screen_title">Tips for your Garden</string>
+    <string name="consejos_riego_title">Smart Watering</string>
+    <string name="consejos_riego_desc">Water your plants early in the morning or late in the afternoon to minimize evaporation. Make sure the water reaches the roots.</string>
+    <string name="consejos_compost_title">Composting</string>
+    <string name="consejos_compost_desc">Create your own compost with kitchen and garden scraps. It is an excellent natural fertilizer and reduces waste.</string>
+    <string name="consejos_rotacion_title">Crop Rotation</string>
+    <string name="consejos_rotacion_desc">Do not plant the same thing in the same place every year. Rotation helps prevent pests and soil diseases.</string>
+    <string name="consejos_plagas_title">Natural Pest Control</string>
+    <string name="consejos_plagas_desc">Use beneficial insects like ladybugs or repellent plants like basil to control pests without chemicals.</string>
+    <string name="consejos_mulching_title">Mulching</string>
+    <string name="consejos_mulching_desc">Cover the soil around your plants with straw, dry leaves, or bark. It helps retain moisture and suppresses weeds.</string>
+    <string name="consejos_asociacion_title">Companion Planting</string>
+    <string name="consejos_asociacion_desc">Some plants benefit each other when planted together. For example, plant carrots near tomatoes to repel some pests.</string>
+
+    <!-- Diario Screen -->
+    <string name="diario_title">Gardening Log</string>
+    <string name="diario_no_records">No records for this day</string>
+
+    <!-- About Screen -->
+    <string name="about_title">About Project Huerto</string>
+    <string name="about_main_desc">This application is designed to be your ideal companion in managing your ecological and sustainable garden. Here you will find everything you need to plan, record, and learn.</string>
+    <string name="about_bancales_title">My Garden Beds</string>
+    <string name="about_bancales_desc">It is the heart of your garden. Here you can create and customize your garden beds (the growing areas). Define their dimensions and add the crops you plan to plant. Visualize your garden in a graphic and organized way.</string>
+    <string name="about_diario_title">Gardening Log</string>
+    <string name="about_diario_desc">Your personal log. Every time you perform an important action such as watering, sowing, or harvesting in one of your beds, the event will be automatically recorded in this section, with the exact date and time. This way, you won\'t lose any detail of your crops\' progress!</string>
+    <string name="about_plagas_title">Pest Guide</string>
+    <string name="about_plagas_desc">An informative section to help you identify and combat the most common pests ecologically. Learn to recognize symptoms and apply organic treatments to keep your garden healthy.</string>
+    <string name="about_consejos_title">Tips</string>
+    <string name="about_consejos_desc">Here you will find recommendations and best practices to get the most out of your garden. From sowing techniques to how to improve soil quality, this section will guide you every step of the way.</string>
 </resources>

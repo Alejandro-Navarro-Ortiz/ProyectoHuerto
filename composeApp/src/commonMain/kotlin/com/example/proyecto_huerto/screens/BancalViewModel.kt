@@ -133,7 +133,7 @@ class BancalViewModel(
             try {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val nuevoCultivo = Cultivo(
-                    nombreHortaliza = hortaliza.nombre,
+                    nombreHortaliza = hortaliza.nombreMostrado, // Corregido: Usar el mapa de nombres
                     frecuenciaRiegoDias = 2,
                     ultimoRiego = getCurrentInstant()
                 )
@@ -143,10 +143,12 @@ class BancalViewModel(
                     .document(bancal.id)
                     .set(bancalActualizado)
 
+                // Corregido: Usar el nombre en español para el registro de actividad
+                val nombreHortaliza = hortaliza.nombreMostrado["es"] ?: hortaliza.nombre
                 registrarActividad(
                     tipo = TipoActividad.SIEMBRA,
                     nombreBancal = bancal.nombre,
-                    detalle = "Sembrado: ${hortaliza.nombre} (${posiciones.size} celdas)"
+                    detalle = "Sembrado: $nombreHortaliza (${posiciones.size} celdas)"
                 )
             } catch (e: Exception) {
                 println("ERROR AL ACTUALIZAR EL CULTIVO: ${e.message}")
@@ -164,19 +166,20 @@ class BancalViewModel(
             try {
                 val cultivosActualizados = bancal.cultivos.toMutableMap()
                 val ahora = getCurrentInstant()
-                
+
                 posiciones.forEach { pos ->
                     cultivosActualizados[pos]?.let { cultivo ->
                         cultivosActualizados[pos] = cultivo.copy(ultimoRiego = ahora)
-                        
-                        // Programamos la notificación local para el próximo riego
+
+                        // Corregido: Usar el nombre en español para la notificación
+                        val nombrePlanta = cultivo.nombreHortaliza["es"] ?: ""
                         notificationScheduler?.scheduleRiegoNotification(
-                            plantName = cultivo.nombreHortaliza,
+                            plantName = nombrePlanta,
                             daysDelay = cultivo.frecuenciaRiegoDias
                         )
                     }
                 }
-                
+
                 val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)
                 db.collection("usuarios").document(user.uid).collection("bancales")
                     .document(bancal.id)
