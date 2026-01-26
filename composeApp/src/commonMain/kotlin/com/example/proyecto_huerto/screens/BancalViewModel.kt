@@ -134,7 +134,7 @@ class BancalViewModel(
             try {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val nuevoCultivo = Cultivo(
-                    nombreHortaliza = hortaliza.nombreMostrado, // Corregido: Usar el mapa de nombres
+                    nombreHortaliza = hortaliza.nombreMostrado,
                     frecuenciaRiegoDias = 2,
                     ultimoRiego = getCurrentInstant()
                 )
@@ -144,7 +144,6 @@ class BancalViewModel(
                     .document(bancal.id)
                     .set(bancalActualizado)
 
-                // Corregido: Usar el nombre en español para el registro de actividad
                 val nombreHortaliza = hortaliza.nombreMostrado["es"] ?: hortaliza.nombre
                 registrarActividad(
                     tipo = TipoActividad.SIEMBRA,
@@ -172,7 +171,6 @@ class BancalViewModel(
                     cultivosActualizados[pos]?.let { cultivo ->
                         cultivosActualizados[pos] = cultivo.copy(ultimoRiego = ahora)
 
-                        // Corregido: Usar el nombre en español para la notificación
                         val nombrePlanta = cultivo.nombreHortaliza["es"] ?: ""
                         notificationScheduler?.scheduleRiegoNotification(
                             plantName = nombrePlanta,
@@ -193,6 +191,60 @@ class BancalViewModel(
                 )
             } catch (e: Exception) {
                 println("ERROR AL REGAR LOS CULTIVOS: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Registra el abonado de los cultivos seleccionados.
+     * En el futuro, esto podría resetear o mejorar ciertos stats del cultivo.
+     */
+    fun abonarCultivos(bancal: Bancal, posiciones: List<String>) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                // Por ahora el abonado es un registro de actividad,
+                // pero podrías añadir un campo 'ultimoAbonado' al modelo Cultivo si lo deseas.
+                registrarActividad(
+                    tipo = TipoActividad.ABONADO, // Asegúrate de tener este tipo en tu enum TipoActividad
+                    nombreBancal = bancal.nombre,
+                    detalle = "Abonadas ${posiciones.size} secciones del bancal"
+                )
+            } catch (e: Exception) {
+                println("ERROR AL ABONAR LOS CULTIVOS: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Elimina los cultivos del bancal tras la cosecha y registra la actividad.
+     */
+    fun cosecharCultivos(bancal: Bancal, posiciones: List<String>) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                val cultivosActualizados = bancal.cultivos.toMutableMap()
+
+                // Recopilamos nombres para el detalle del diario antes de borrar
+                val nombresCosechados = posiciones.mapNotNull {
+                    cultivosActualizados[it]?.nombreHortaliza?.get("es")
+                }.distinct().joinToString(", ")
+
+                // Quitamos las plantas de las celdas seleccionadas
+                posiciones.forEach { cultivosActualizados.remove(it) }
+
+                val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)
+                db.collection("usuarios").document(user.uid).collection("bancales")
+                    .document(bancal.id)
+                    .set(bancalActualizado)
+
+                registrarActividad(
+                    tipo = TipoActividad.COSECHA, // Asegúrate de tener este tipo en tu enum TipoActividad
+                    nombreBancal = bancal.nombre,
+                    detalle = "Cosechado: $nombresCosechados (${posiciones.size} celdas liberadas)"
+                )
+            } catch (e: Exception) {
+                println("ERROR AL COSECHAR LOS CULTIVOS: ${e.message}")
             }
         }
     }

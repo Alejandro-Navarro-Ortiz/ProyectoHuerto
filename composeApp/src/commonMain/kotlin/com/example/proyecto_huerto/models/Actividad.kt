@@ -24,5 +24,6 @@ enum class TipoActividad {
     RIEGO,
     SIEMBRA,
     COSECHA,
-    TRATAMIENTO
+    TRATAMIENTO,
+    ABONADO
 }
