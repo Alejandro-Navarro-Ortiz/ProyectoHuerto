@@ -66,6 +66,19 @@
     <string name="bancales_create">Create</string>
     <string name="bancales_delete_confirm">Delete garden bed?</string>
 
+    <!-- Garden Bed Detail -->
+    <string name="bancal_multi_selection">Multiple Selection</string>
+    <string name="bancal_dimensions">Dimensions</string>
+    <string name="bancal_select_plant">Select a plant</string>
+    <string name="bancal_conflict_title">Crop Conflict</string>
+    <string name="bancal_conflict_subtitle">These plants do not get along:</string>
+    <string name="bancal_conflict_desc">Planting incompatible vegetables can reduce yield or attract pests.</string>
+    <string name="bancal_conflict_confirm">Plant anyway</string>
+    <string name="bancal_conflict_cancel">Change plant</string>
+    <string name="bancal_water_title">Confirm Watering</string>
+    <string name="bancal_water_desc">Do you want to water the selected crops?</string>
+    <string name="bancal_water_confirm">Water</string>
+
     <!-- Growing Guide & Detail Sheets -->
     <string name="guia_title">Growing Guide</string>
     <string name="guia_hortalizas_title">Botanical Library</string>

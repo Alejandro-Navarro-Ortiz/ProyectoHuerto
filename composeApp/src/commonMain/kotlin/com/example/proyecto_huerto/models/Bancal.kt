@@ -20,4 +20,14 @@ data class Bancal(
     val cultivos: Map<String, Cultivo> = emptyMap(),
     val notas: String = "", // Observaciones generales del usuario sobre el bancal
     val historico: List<String> = emptyList() // Registro de cultivos anteriores (rotación de cultivos)
-)
+) {
+    /**
+     * Representa una planta individual dentro de un bancal.
+     */
+    @Serializable
+    data class Cultivo(
+        val nombreHortaliza: Map<String, String> = emptyMap(),
+        val regado: Boolean = false,
+        val fechaPlantacion: String = "" // Considera usar un tipo de dato de fecha/hora más robusto en el futuro
+    )
+}

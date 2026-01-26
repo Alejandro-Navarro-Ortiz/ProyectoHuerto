@@ -17,6 +17,7 @@ import dev.gitlive.firebase.messaging.messaging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.collections.forEach
 
 /**
  * ViewModel encargado de la gestión de los bancales y cultivos.

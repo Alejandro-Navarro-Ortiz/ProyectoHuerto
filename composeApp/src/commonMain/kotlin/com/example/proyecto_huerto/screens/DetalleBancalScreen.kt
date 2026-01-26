@@ -1,341 +1,366 @@
 package com.example.proyecto_huerto.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Bancal
-import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
-import com.example.proyecto_huerto.viewmodel.HuertoViewModel
-import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
+import proyectohuerto.composeapp.generated.resources.Res
+import proyectohuerto.composeapp.generated.resources.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+private sealed class DialogState {
+    object Hidden : DialogState()
+    object PlantSelection : DialogState()
+    object Watering : DialogState()
+    data class Incompatibility(val pendingPlant: Hortaliza, val enemies: Set<Hortaliza>) : DialogState()
+}
+
+private fun Hortaliza.nombreEnIdiomaActual(language: String): String {
+    return nombreMostrado[language] ?: nombreMostrado["es"] ?: nombre
+}
+
 @Composable
 fun DetalleBancalScreen(
-    bancal: Bancal,
-    onBack: () -> Unit,
+    bancalState: HuertoUiState<List<Bancal>>,
+    hortalizasState: HuertoUiState<List<Hortaliza>>,
+    bancalId: String?,
+    currentLanguage: String,
     onUpdateCultivos: (List<String>, String) -> Unit,
-    onRegarCultivos: (List<String>) -> Unit,
-    viewModel: HuertoViewModel
+    onRegarCultivos: (List<String>) -> Unit
 ) {
-    val hortalizasState by viewModel.hortalizasState.collectAsState()
-    val currentLanguage = Locale.current.language
+    if (bancalId == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Bancal no encontrado")
+        }
+        return
+    }
 
-    var modoSeleccion by rememberSaveable { mutableStateOf(false) }
+    when (bancalState) {
+        is HuertoUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is HuertoUiState.Success -> {
+            val bancal = bancalState.data.find { it.id == bancalId }
+            if (bancal == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Bancal no encontrado")
+                }
+            } else {
+                DetalleBancalContent(
+                    bancal = bancal,
+                    hortalizasState = hortalizasState,
+                    currentLanguage = currentLanguage,
+                    onUpdateCultivos = onUpdateCultivos,
+                    onRegarCultivos = onRegarCultivos
+                )
+            }
+        }
+        is HuertoUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Error: ${bancalState.message}")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetalleBancalContent(
+    bancal: Bancal,
+    hortalizasState: HuertoUiState<List<Hortaliza>>,
+    currentLanguage: String,
+    onUpdateCultivos: (List<String>, String) -> Unit,
+    onRegarCultivos: (List<String>) -> Unit
+) {
     var posicionesSeleccionadas by remember { mutableStateOf(emptySet<String>()) }
-    var mostrarDialogoPlantas by remember { mutableStateOf(false) }
-    var mostrarDialogoRiego by remember { mutableStateOf(false) }
     var justWateredPositions by remember { mutableStateOf(emptySet<String>()) }
+    var dialogState by remember { mutableStateOf<DialogState>(DialogState.Hidden) }
 
-    var mostrarAvisoIncompatibilidad by remember { mutableStateOf(false) }
-    var plantaPendiente by remember { mutableStateOf<Hortaliza?>(null) }
-    var enemigosDetectados by remember { mutableStateOf<List<Hortaliza>>(emptyList()) }
-
-    LaunchedEffect(justWateredPositions) {
-        if (justWateredPositions.isNotEmpty()) {
-            delay(2000L)
-            justWateredPositions = emptySet()
+    when (hortalizasState) {
+        is HuertoUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         }
-    }
+        is HuertoUiState.Success -> {
+            val hortalizasDisponibles = hortalizasState.data
+            val hortalizasMap = remember(hortalizasDisponibles) {
+                hortalizasDisponibles.associateBy { it.nombre }
+            }
 
-    val seleccionContieneCultivos = remember(posicionesSeleccionadas, bancal.cultivos) {
-        posicionesSeleccionadas.any { bancal.cultivos[it] != null }
-    }
-
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(bancal.nombre, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
-        },
-        floatingActionButton = {
-            if (posicionesSeleccionadas.isNotEmpty()) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            Scaffold {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(bancal.ancho),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FloatingActionButton(
-                        onClick = { mostrarDialogoPlantas = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = "Plantar Hortaliza")
-                    }
+                    items(bancal.ancho * bancal.largo) { index ->
+                        val fila = index / bancal.ancho
+                        val columna = index % bancal.ancho
+                        val posicion = "$fila-$columna"
+                        val cultivo = bancal.cultivos[posicion]
+                        val isSelected = posicion in posicionesSeleccionadas
 
-                    if (seleccionContieneCultivos) {
-                        FloatingActionButton(
-                            onClick = { mostrarDialogoRiego = true },
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        CeldaBancal(
+                            cultivo = cultivo,
+                            isSelected = isSelected,
+                            isJustWatered = posicion in justWateredPositions,
+                            hortalizasMap = hortalizasMap,
+                            language = currentLanguage
                         ) {
-                            Icon(Icons.Default.WaterDrop, contentDescription = "Regar Cultivos")
-                        }
-                    }
-                }
-            }
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Selección Múltiple", style = MaterialTheme.typography.titleMedium)
-                Switch(
-                    checked = modoSeleccion,
-                    onCheckedChange = {
-                        modoSeleccion = it
-                        if (!it) {
-                            posicionesSeleccionadas = emptySet()
-                        }
-                    }
-                )
-            }
-
-            Text("Dimensiones: ${bancal.ancho}x${bancal.largo}", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            when (val state = hortalizasState) {
-                is HuertoUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is HuertoUiState.Success -> {
-                    val hortalizasDisponibles = state.data
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(bancal.ancho.coerceAtLeast(1)),
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(bancal.ancho * bancal.largo) { index ->
-                            val fila = index / bancal.ancho
-                            val columna = index % bancal.ancho
-                            val posicion = "$fila-$columna"
-                            val cultivo = bancal.cultivos[posicion]
-                            val isSelected = posicion in posicionesSeleccionadas
-                            val isJustWatered = posicion in justWateredPositions
-
-                            CeldaBancal(
-                                cultivo = cultivo,
-                                isSelected = isSelected,
-                                isJustWatered = isJustWatered,
-                                hortalizas = hortalizasDisponibles,
-                                language = currentLanguage
-                            ) {
-                                if (modoSeleccion) {
-                                    posicionesSeleccionadas = if (isSelected) {
-                                        posicionesSeleccionadas - posicion
-                                    } else {
-                                        posicionesSeleccionadas + posicion
-                                    }
-                                } else {
-                                    posicionesSeleccionadas = setOf(posicion)
-                                    if (bancal.cultivos[posicion] != null) {
-                                        mostrarDialogoRiego = true
-                                    } else {
-                                        mostrarDialogoPlantas = true
-                                    }
-                                }
+                            posicionesSeleccionadas = setOf(posicion)
+                            if (bancal.cultivos[posicion] != null) {
+                                dialogState = DialogState.Watering
+                            } else {
+                                dialogState = DialogState.PlantSelection
                             }
                         }
                     }
+                }
 
-                    if (mostrarDialogoPlantas) {
+                when (val currentDialog = dialogState) {
+                    is DialogState.PlantSelection -> {
                         DialogoSeleccionHortaliza(
                             hortalizas = hortalizasDisponibles,
                             language = currentLanguage,
                             onDismiss = {
-                                mostrarDialogoPlantas = false
+                                dialogState = DialogState.Hidden
                                 posicionesSeleccionadas = emptySet()
                             },
                             onSelect = { hortaliza ->
-                                val nombresEnemigos = verificarIncompatibilidad(
+                                val enemigos = verificarIncompatibilidad(
                                     nueva = hortaliza,
                                     seleccionadas = posicionesSeleccionadas.toList(),
                                     bancal = bancal,
-                                    hortalizas = hortalizasDisponibles
+                                    hortalizasMap = hortalizasMap
                                 )
 
-                                if (nombresEnemigos.isNotEmpty()) {
-                                    plantaPendiente = hortaliza
-                                    enemigosDetectados = hortalizasDisponibles.filter { it.nombre in nombresEnemigos }
-                                    mostrarAvisoIncompatibilidad = true
-                                    mostrarDialogoPlantas = false
+                                if (enemigos.isNotEmpty()) {
+                                    dialogState = DialogState.Incompatibility(hortaliza, enemigos)
                                 } else {
                                     onUpdateCultivos(posicionesSeleccionadas.toList(), hortaliza.nombre)
-                                    mostrarDialogoPlantas = false
+                                    dialogState = DialogState.Hidden
                                     posicionesSeleccionadas = emptySet()
                                 }
                             }
                         )
                     }
-                }
-                is HuertoUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Error: ${state.message}")
+
+                    is DialogState.Incompatibility -> {
+                        AvisoIncompatibilidadDialog(
+                            pendingPlant = currentDialog.pendingPlant,
+                            enemies = currentDialog.enemies,
+                            language = currentLanguage,
+                            onConfirm = {
+                                onUpdateCultivos(posicionesSeleccionadas.toList(), currentDialog.pendingPlant.nombre)
+                                dialogState = DialogState.Hidden
+                                posicionesSeleccionadas = emptySet()
+                            },
+                            onCancel = {
+                                dialogState = DialogState.PlantSelection
+                            }
+                        )
+                    }
+
+                    is DialogState.Watering -> {
+                        RiegoDialog(
+                            onConfirm = {
+                                onRegarCultivos(posicionesSeleccionadas.toList())
+                                justWateredPositions = posicionesSeleccionadas
+                                dialogState = DialogState.Hidden
+                                posicionesSeleccionadas = emptySet()
+                            },
+                            onDismiss = {
+                                dialogState = DialogState.Hidden
+                                posicionesSeleccionadas = emptySet()
+                            }
+                        )
+                    }
+
+                    is DialogState.Hidden -> {
+                        // No mostrar ningún diálogo
                     }
                 }
             }
         }
+        is HuertoUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Error: ${hortalizasState.message}")
+            }
+        }
     }
+}
 
-    if (mostrarAvisoIncompatibilidad && plantaPendiente != null) {
-        val nombrePlantaPendiente = plantaPendiente!!.nombreMostrado.getOrDefault(currentLanguage, plantaPendiente!!.nombre)
-        AlertDialog(
-            onDismissRequest = { mostrarAvisoIncompatibilidad = false },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
-            title = {
+@Composable
+private fun AvisoIncompatibilidadDialog(
+    pendingPlant: Hortaliza,
+    enemies: Set<Hortaliza>,
+    language: String,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
+        title = {
+            Text(
+                stringResource(Res.string.bancal_conflict_title),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
-                    "Conflicto de Cultivo",
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center
+                    stringResource(Res.string.bancal_conflict_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        "Estas plantas no se llevan bien:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(pendingPlant.icono, fontSize = 40.sp)
+                        Text(pendingPlant.nombreEnIdiomaActual(language), style = MaterialTheme.typography.labelSmall)
+                    }
+
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 16.dp).size(32.dp)
                     )
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        // Planta que quieres poner
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(plantaPendiente!!.icono, fontSize = 40.sp)
-                            Text(nombrePlantaPendiente, style = MaterialTheme.typography.labelSmall)
-                        }
-
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = 16.dp).size(32.dp)
-                        )
-
-                        // Plantas enemigas encontradas
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            enemigosDetectados.forEach { enemigo ->
-                                val nombreEnemigo = enemigo.nombreMostrado.getOrDefault(currentLanguage, enemigo.nombre)
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(enemigo.icono, fontSize = 40.sp)
-                                    Text(nombreEnemigo, style = MaterialTheme.typography.labelSmall)
-                                }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        enemies.forEach { enemigo ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(enemigo.icono, fontSize = 40.sp)
+                                Text(enemigo.nombreEnIdiomaActual(language), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
                             }
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Plantar hortalizas incompatibles puede reducir la cosecha o atraer plagas.",
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        plantaPendiente?.let { onUpdateCultivos(posicionesSeleccionadas.toList(), it.nombre) }
-                        mostrarAvisoIncompatibilidad = false
-                        posicionesSeleccionadas = emptySet()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Plantar de todos modos")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    mostrarAvisoIncompatibilidad = false
-                    mostrarDialogoPlantas = true
-                }) {
-                    Text("Cambiar planta")
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    stringResource(Res.string.bancal_conflict_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        )
-    }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(stringResource(Res.string.bancal_conflict_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(Res.string.bancal_conflict_cancel))
+            }
+        }
+    )
+}
 
-    if (mostrarDialogoRiego) {
-        AlertDialog(
-            onDismissRequest = { mostrarDialogoRiego = false },
-            title = { Text("Confirmar Riego") },
-            text = { Text("¿Deseas regar los cultivos seleccionados?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onRegarCultivos(posicionesSeleccionadas.toList())
-                        justWateredPositions = posicionesSeleccionadas
-                        mostrarDialogoRiego = false
-                        posicionesSeleccionadas = emptySet()
-                    }
-                ) { Text("Regar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { mostrarDialogoRiego = false; posicionesSeleccionadas = emptySet() }) { Text("Cancelar") }
+@Composable
+private fun RiegoDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.bancal_water_title)) },
+        text = { Text(stringResource(Res.string.bancal_water_desc)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(Res.string.bancal_water_confirm))
             }
-        )
-    }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.bancales_cancel))
+            }
+        }
+    )
 }
 
 private fun verificarIncompatibilidad(
     nueva: Hortaliza,
     seleccionadas: List<String>,
     bancal: Bancal,
-    hortalizas: List<Hortaliza>
-): Set<String> {
-    val enemigosEncontrados = mutableSetOf<String>()
-    val nombreNueva = nueva.nombre // Usar el ID para la lógica de incompatibilidad
+    hortalizasMap: Map<String, Hortaliza>
+): Set<Hortaliza> {
+    val enemigosEncontrados = mutableSetOf<Hortaliza>()
+    val nombreNueva = nueva.nombre
+    val incompatiblesConNueva = nueva.incompatibles.toSet()
 
-    seleccionadas.forEach { pos ->
+    for (pos in seleccionadas) {
         val partes = pos.split("-")
-        val f = partes[0].toInt()
-        val c = partes[1].toInt()
+        val f = partes.getOrNull(0)?.toIntOrNull() ?: continue
+        val c = partes.getOrNull(1)?.toIntOrNull() ?: continue
 
         for (df in -1..1) {
             for (dc in -1..1) {
@@ -345,10 +370,12 @@ private fun verificarIncompatibilidad(
                 val posVecina = "$nf-$nc"
 
                 bancal.cultivos[posVecina]?.let { cultivoVecino ->
-                    val hortalizaVecina = hortalizas.find { it.nombre == cultivoVecino.nombreHortaliza.getOrDefault("es", "") }
-                    hortalizaVecina?.let {
-                        if (it.incompatibles.contains(nombreNueva)) {
-                            enemigosEncontrados.add(it.nombre)
+                    val nombreHortalizaVecina = cultivoVecino.nombreHortaliza["es"] ?: cultivoVecino.nombreHortaliza.values.firstOrNull() ?: ""
+                    val hortalizaVecina = hortalizasMap[nombreHortalizaVecina]
+
+                    hortalizaVecina?.let { vecina ->
+                        if (vecina.incompatibles.contains(nombreNueva) || incompatiblesConNueva.contains(vecina.nombre)) {
+                            enemigosEncontrados.add(vecina)
                         }
                     }
                 }
@@ -360,57 +387,65 @@ private fun verificarIncompatibilidad(
 
 @Composable
 fun CeldaBancal(
-    cultivo: Cultivo?,
+    cultivo: Bancal.Cultivo?,
     isSelected: Boolean,
     isJustWatered: Boolean,
-    hortalizas: List<Hortaliza>,
+    hortalizasMap: Map<String, Hortaliza>,
     language: String,
     onClick: () -> Unit
 ) {
-    val seco = cultivo?.estaSeco ?: false
-    val backgroundColor = when {
-        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-        seco -> Color.Yellow.copy(alpha = 0.5f)
-        else -> MaterialTheme.colorScheme.surfaceVariant
+    val hortaliza = cultivo?.let { c ->
+        val nombre = c.nombreHortaliza[language] ?: c.nombreHortaliza["es"]
+        hortalizasMap[nombre]
     }
-    val border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+
+    val isWatered = cultivo?.regado ?: false
 
     Card(
-        modifier = Modifier.aspectRatio(1f).clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.extraSmall,
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        border = border
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            if (cultivo != null) {
-                val nombreCultivo = cultivo.nombreHortaliza.getOrDefault(language, cultivo.nombreHortaliza["es"] ?: "")
-                Text(
-                    text = hortalizas.find { it.nombreMostrado.containsValue(nombreCultivo) }?.icono ?: "❓",
-                    fontSize = 24.sp
+        Box(contentAlignment = Alignment.Center) {
+            if (hortaliza != null) {
+                Text(hortaliza.icono, fontSize = 28.sp)
+                if (isWatered) {
+                    Icon(
+                        Icons.Default.WaterDrop,
+                        contentDescription = stringResource(Res.string.bancal_water_desc),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .size(16.dp)
+                    )
+                }
+            } else {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(Res.string.bancales_add),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 )
-            } else if (!isSelected) {
-                Box(modifier = Modifier.size(12.dp).background(Color.Gray.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small))
             }
-
-            if (isJustWatered) {
+            this@Card.AnimatedVisibility(
+                visible = isJustWatered,
+                enter = fadeIn(animationSpec = spring()),
+                exit = fadeOut(animationSpec = spring())
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.WaterDrop,
-                        contentDescription = "Regado",
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f))
+                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialogoSeleccionHortaliza(
     hortalizas: List<Hortaliza>,
@@ -418,31 +453,47 @@ fun DialogoSeleccionHortaliza(
     onDismiss: () -> Unit,
     onSelect: (Hortaliza) -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Selecciona una hortaliza") },
-        text = {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 80.dp),
-                modifier = Modifier.heightIn(max = 300.dp)
-            ) {
-                items(hortalizas) { hortaliza ->
-                    val nombreMostrado = hortaliza.nombreMostrado.getOrDefault(language, hortaliza.nombre)
-                    Column(
-                        modifier = Modifier
-                            .clickable { onSelect(hortaliza) }
-                            .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(hortaliza.icono, fontSize = 32.sp)
-                        Text(nombreMostrado, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
+    AlertDialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 500.dp),
+            shape = MaterialTheme.shapes.large,
+            tonalElevation = AlertDialogDefaults.TonalElevation
+        ) {
+            Column {
+                Text(
+                    text = stringResource(Res.string.bancal_select_plant),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+                LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp)) {
+                    items(hortalizas) { hortaliza ->
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    hortaliza.nombreEnIdiomaActual(language),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            leadingContent = {
+                                Text(hortaliza.icono, fontSize = 24.sp)
+                            },
+                            modifier = Modifier.clickable { onSelect(hortaliza) }
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(Res.string.bancales_cancel))
                     }
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
-    )
+    }
 }

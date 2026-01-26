@@ -14,6 +14,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -25,7 +27,6 @@ import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignUpScreen
-import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.notifications.NotificationScheduler
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.profile.ProfileViewModel
@@ -63,10 +64,10 @@ fun AppNavHost(
 
     val notificationScheduler = NotificationScheduler(context)
 
+    // ViewModels
     val bancalViewModel: BancalViewModel = viewModel(
         factory = GenericViewModelFactory { BancalViewModel(notificationScheduler) }
     )
-
     val diarioViewModel: DiarioViewModel = viewModel()
     val huertoViewModel: HuertoViewModel = viewModel()
 
@@ -199,10 +200,9 @@ fun AppNavHost(
                 bancales = bancales,
                 onAddBancal = { nombre, ancho, largo -> bancalViewModel.addBancal(nombre, ancho, largo) },
                 onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) },
-                onNavigate = { screen ->
-                    if (screen == "Perfil") navController.navigate("profile")
-                    if (screen == "Inicio") navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
+                onNavigate = { route ->
+                    if (route == "Inicio") {
+                        navController.navigate("home") { popUpTo("home") { inclusive = true } }
                     }
                 },
                 onBancalClick = { id -> navController.navigate("detalle_bancal/$id") }
@@ -215,28 +215,27 @@ fun AppNavHost(
         ) { backStackEntry ->
             val bancales by bancalViewModel.bancales.collectAsState()
             val hortalizasState by huertoViewModel.hortalizasState.collectAsState()
+            val bancalId = backStackEntry.arguments?.getString("bancalId")
 
-            val id = backStackEntry.arguments?.getString("bancalId")
-            val bancal = id?.let { bancalId -> bancales.find { it.id == bancalId } }
-
-            if (bancal != null) {
-                DetalleBancalScreen(
-                    bancal = bancal,
-                    onBack = { navController.popBackStack() },
-                    onUpdateCultivos = { posiciones, nombreHortaliza ->
-                        if (hortalizasState is HuertoUiState.Success) {
-                            val hortaliza = (hortalizasState as HuertoUiState.Success<List<Hortaliza>>).data.find { it.nombre == nombreHortaliza }
-                            if (hortaliza != null) {
-                                bancalViewModel.updateCultivos(bancal, posiciones, hortaliza)
-                            }
-                        }
-                    },
-                    onRegarCultivos = { posiciones ->
+            DetalleBancalScreen(
+                bancalState = HuertoUiState.Success(bancales),
+                hortalizasState = hortalizasState,
+                bancalId = bancalId,
+                currentLanguage = currentLanguage,
+                onUpdateCultivos = { posiciones, nombreHortaliza ->
+                    val bancal = bancalViewModel.getBancalById(bancalId ?: "")
+                    val hortaliza = (hortalizasState as? HuertoUiState.Success)?.data?.find { it.nombre == nombreHortaliza }
+                    if (bancal != null && hortaliza != null) {
+                        bancalViewModel.updateCultivos(bancal, posiciones, hortaliza)
+                    }
+                },
+                onRegarCultivos = { posiciones ->
+                    val bancal = bancalViewModel.getBancalById(bancalId ?: "")
+                    if (bancal != null) {
                         bancalViewModel.regarCultivos(bancal, posiciones)
-                    },
-                    viewModel = huertoViewModel
-                )
-            }
+                    }
+                }
+            )
         }
 
         composable("profile") {
@@ -288,41 +287,45 @@ fun AppNavHost(
         composable("plagas") {
             val plagasState by huertoViewModel.plagasState.collectAsState()
             PlagasScreen(
-                onPlagaClick = { plagaId -> navController.navigate("plaga_detail/$plagaId") },
-                onBack = { navController.popBackStack() },
-                uiState = plagasState
+                onPlagaClick = { plagaId -> navController.navigate("plaga_detalle/$plagaId") },
+                uiState = plagasState,
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable(
-            route = "plaga_detail/{plagaId}",
+            route = "plaga_detalle/{plagaId}",
             arguments = listOf(navArgument("plagaId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val plagaId = backStackEntry.arguments?.getString("plagaId") ?: ""
+            val plagaId = backStackEntry.arguments?.getString("plagaId")
             val plagasState by huertoViewModel.plagasState.collectAsState()
 
-            PlagaDetailScreen(
-                plagaId = plagaId,
-                onBack = { navController.popBackStack() },
-                uiState = plagasState
-            )
-        }
-
-        composable("about") {
-            AboutScreen(onBack = { navController.popBackStack() })
+            if (plagaId != null) {
+                PlagaDetailScreen(
+                    plagaId = plagaId,
+                    uiState = plagasState,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable("consejos") {
             ConsejosScreen(onNavigate = { route -> navController.navigate(route) })
         }
+
+        composable("about") {
+            AboutScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
 
-class GenericViewModelFactory<T : androidx.lifecycle.ViewModel>(
-    private val creator: () -> T
-) : androidx.lifecycle.ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+/**
+ * Una ViewModel Factory genérica para poder instanciar ViewModels que requieren dependencias
+ * en su constructor (como el NotificationScheduler).
+ */
+class GenericViewModelFactory<T : ViewModel>(private val creator: () -> T) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
         return creator() as T
     }
 }

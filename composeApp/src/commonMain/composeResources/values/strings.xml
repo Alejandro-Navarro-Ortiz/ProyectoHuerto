@@ -66,6 +66,19 @@
     <string name="bancales_create">Crear</string>
     <string name="bancales_delete_confirm">¿Eliminar bancal?</string>
 
+    <!-- Detalle Bancal -->
+    <string name="bancal_multi_selection">Selección Múltiple</string>
+    <string name="bancal_dimensions">Dimensiones</string>
+    <string name="bancal_select_plant">Selecciona una planta</string>
+    <string name="bancal_conflict_title">Conflicto de Cultivo</string>
+    <string name="bancal_conflict_subtitle">Estas plantas no se llevan bien:</string>
+    <string name="bancal_conflict_desc">Plantar hortalizas incompatibles puede reducir la cosecha o atraer plagas.</string>
+    <string name="bancal_conflict_confirm">Plantar de todos modos</string>
+    <string name="bancal_conflict_cancel">Cambiar planta</string>
+    <string name="bancal_water_title">Confirmar Riego</string>
+    <string name="bancal_water_desc">¿Deseas regar los cultivos seleccionados?</string>
+    <string name="bancal_water_confirm">Regar</string>
+
     <!-- Guía de Cultivo y Fichas de Detalle -->
     <string name="guia_title">Guía de Cultivo</string>
     <string name="guia_hortalizas_title">Biblioteca Botánica</string>
