@@ -93,6 +93,11 @@
     <string name="detail_avoid">Avoid</string>
     <string name="detail_not_found">Vegetable not found</string>
 
+    <!-- Pests and Diseases -->
+    <string name="pest_description">Description</string>
+    <string name="pest_symptoms">Symptoms and Damage</string>
+    <string name="pest_treatment">Organic Treatment</string>
+
     <!-- Consejos Screen -->
     <string name="consejos_screen_title">Tips for your Garden</string>
     <string name="consejos_riego_title">Smart Watering</string>

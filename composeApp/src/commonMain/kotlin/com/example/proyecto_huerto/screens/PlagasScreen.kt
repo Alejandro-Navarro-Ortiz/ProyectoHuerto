@@ -11,10 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.proyecto_huerto.models.Plaga
+import com.example.proyecto_huerto.models.getLocalizedSanitized
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import org.jetbrains.compose.resources.stringResource
 import proyectohuerto.composeapp.generated.resources.*
@@ -24,10 +24,9 @@ import proyectohuerto.composeapp.generated.resources.*
 fun PlagasScreen(
     onPlagaClick: (String) -> Unit,
     onBack: () -> Unit,
-    uiState: HuertoUiState<List<Plaga>>
+    uiState: HuertoUiState<List<Plaga>>,
+    language: String
 ) {
-    val currentLanguage = Locale.current.language
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,7 +60,7 @@ fun PlagasScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(state.data) { plaga ->
-                            PlagaListItem(plaga, currentLanguage) {
+                            PlagaListItem(plaga, language) {
                                 onPlagaClick(plaga.id)
                             }
                         }
@@ -101,12 +100,13 @@ private fun PlagaListItem(plaga: Plaga, language: String, onClick: () -> Unit) {
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = plaga.name[language] ?: plaga.name["es"] ?: plaga.id,
+                    text = plaga.name.getLocalizedSanitized(language),
                     style = MaterialTheme.typography.titleLarge
                 )
-                plaga.scientificName[language]?.takeIf { it.isNotBlank() }?.let {
+                val sciName = plaga.scientificName.getLocalizedSanitized(language)
+                if (sciName.isNotBlank()) {
                     Text(
-                        text = it,
+                        text = sciName,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -121,16 +121,15 @@ private fun PlagaListItem(plaga: Plaga, language: String, onClick: () -> Unit) {
 fun PlagaDetailScreen(
     plagaId: String,
     onBack: () -> Unit,
-    uiState: HuertoUiState<List<Plaga>>
+    uiState: HuertoUiState<List<Plaga>>,
+    language: String
 ) {
-    val currentLanguage = Locale.current.language
-
     val plaga = (uiState as? HuertoUiState.Success)?.data?.find { it.id == plagaId }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(plaga?.name?.get(currentLanguage) ?: plaga?.name?.get("es") ?: "") },
+                title = { Text(plaga?.name?.getLocalizedSanitized(language) ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.profile_back))
@@ -151,19 +150,19 @@ fun PlagaDetailScreen(
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     item {
-                        val scientificName = plaga.scientificName[currentLanguage] ?: plaga.scientificName["es"] ?: ""
-                        val description = plaga.description[currentLanguage] ?: plaga.description["es"] ?: ""
-                        val symptoms = plaga.symptoms[currentLanguage] ?: plaga.symptoms["es"] ?: ""
-                        val organicTreatment = plaga.organicTreatment[currentLanguage] ?: plaga.organicTreatment["es"] ?: ""
+                        val scientificName = plaga.scientificName.getLocalizedSanitized(language)
+                        val description = plaga.description.getLocalizedSanitized(language)
+                        val symptoms = plaga.symptoms.getLocalizedSanitized(language)
+                        val organicTreatment = plaga.organicTreatment.getLocalizedSanitized(language)
 
                         Column {
                             if (scientificName.isNotBlank()) {
                                 Text(scientificName, style = MaterialTheme.typography.titleMedium)
                                 Spacer(Modifier.height(16.dp))
                             }
-                            PlagaDetailSection("Descripción", description)
-                            PlagaDetailSection("Síntomas y Daños", symptoms)
-                            PlagaDetailSection("Tratamiento Ecológico", organicTreatment)
+                            PlagaDetailSection(stringResource(Res.string.pest_description), description)
+                            PlagaDetailSection(stringResource(Res.string.pest_symptoms), symptoms)
+                            PlagaDetailSection(stringResource(Res.string.pest_treatment), organicTreatment)
                         }
                     }
                 }

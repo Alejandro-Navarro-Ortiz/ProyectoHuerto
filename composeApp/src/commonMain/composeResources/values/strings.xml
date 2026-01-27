@@ -92,6 +92,11 @@
     <string name="detail_allies">Aliados</string>
     <string name="detail_avoid">Evitar</string>
     <string name="detail_not_found">Hortaliza no encontrada</string>
+    
+    <!-- Plagas y Enfermedades -->
+    <string name="pest_description">Descripción</string>
+    <string name="pest_symptoms">Síntomas y Daños</string>
+    <string name="pest_treatment">Tratamiento Ecológico</string>
 
     <!-- Consejos Screen -->
     <string name="consejos_screen_title">Consejos para tu Huerto</string>
