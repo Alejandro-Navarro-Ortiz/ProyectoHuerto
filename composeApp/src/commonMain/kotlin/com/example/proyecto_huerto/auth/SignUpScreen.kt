@@ -1,8 +1,10 @@
 package com.example.proyecto_huerto.auth
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,15 +12,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import proyectohuerto.composeapp.generated.resources.Res
 import proyectohuerto.composeapp.generated.resources.fotologo
+import proyectohuerto.composeapp.generated.resources.auth_email
+import proyectohuerto.composeapp.generated.resources.auth_password
+import proyectohuerto.composeapp.generated.resources.signup_button
+import proyectohuerto.composeapp.generated.resources.signup_already_account
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Pantalla de registro de usuario.
+ * Mantiene coherencia visual con la pantalla de SignIn incluyendo el mismo fondo
+ * y disposición de elementos.
+ */
 @Composable
 fun SignUpScreen(
     onSignUpClick: (String, String) -> Unit,
@@ -27,9 +41,21 @@ fun SignUpScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    // Degradado radial sutil en la esquina superior izquierda (igual que SignInScreen)
+    val backgroundBrush = Brush.radialGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            Color.Transparent
+        ),
+        center = Offset(0f, 0f),
+        radius = 1000f
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .background(backgroundBrush)
     ) {
         Column(
             modifier = Modifier
@@ -39,57 +65,50 @@ fun SignUpScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Imagen del logo sobre el título
+            Image(
+                painter = painterResource(Res.drawable.fotologo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(bottom = 16.dp)
+            )
+
             Text(
-                text = "Crear Cuenta",
-                style = MaterialTheme.typography.headlineLarge,
+                text = "Bienvenido a MiHuerto",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Image(
-                painter = painterResource(Res.drawable.fotologo),
-                contentDescription = "Logo Huerto",
-                modifier = Modifier.size(160.dp)
-            )
-
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Campo de Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text(stringResource(Res.string.auth_email)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Campo de Contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(Res.string.auth_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Botón de Registro
             Button(
                 onClick = {
                     if (email.isNotBlank() && password.isNotBlank()) {
@@ -98,22 +117,21 @@ fun SignUpScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium,
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Registrarse",
-                    fontSize = 16.sp,
+                    text = stringResource(Res.string.signup_button),
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // Enlace para volver a Iniciar Sesión
             TextButton(onClick = onNavigateToSignIn) {
                 Text(
-                    text = "¿Ya tienes cuenta? Inicia Sesión",
+                    text = stringResource(Res.string.signup_already_account),
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold

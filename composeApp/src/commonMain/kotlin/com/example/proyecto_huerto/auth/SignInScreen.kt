@@ -2,14 +2,18 @@ package com.example.proyecto_huerto.auth
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -21,6 +25,7 @@ import proyectohuerto.composeapp.generated.resources.*
 /**
  * Pantalla de inicio de sesión principal.
  * Permite la autenticación mediante correo/contraseña o a través de Google.
+ * Incluye un degradado sutil en la esquina y el logo sobre el título.
  */
 @Composable
 fun SignInScreen(
@@ -32,16 +37,22 @@ fun SignInScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Fondo decorativo o imagen principal
-        Image(
-            painter = painterResource(Res.drawable.fotologo),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-            alpha = 0.3f
-        )
+    // Degradado radial sutil solo en la esquina superior izquierda
+    val backgroundBrush = Brush.radialGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            Color.Transparent
+        ),
+        center = Offset(0f, 0f),
+        radius = 1000f
+    )
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .background(backgroundBrush)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,6 +60,15 @@ fun SignInScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Imagen del logo sobre el título
+            Image(
+                painter = painterResource(Res.drawable.fotologo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(bottom = 16.dp)
+            )
+
             Text(
                 text = stringResource(Res.string.signin_welcome),
                 fontSize = 28.sp,
@@ -121,7 +141,16 @@ fun SignInScreen(
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.ic_google_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = stringResource(Res.string.signin_google),
                         fontWeight = FontWeight.Medium,
