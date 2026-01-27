@@ -17,7 +17,6 @@ import dev.gitlive.firebase.messaging.messaging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlin.collections.forEach
 
 /**
  * ViewModel encargado de la gestión de los bancales y cultivos.
@@ -134,7 +133,9 @@ class BancalViewModel(
             try {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val nuevoCultivo = Cultivo(
-                    nombreHortaliza = hortaliza.nombreMostrado, // Corregido: Usar el mapa de nombres
+                    hortalizaId = hortaliza.nombre, // ASIGNACIÓN CORRECTA: Vital para mostrar el icono
+                    nombreHortaliza = hortaliza.nombreMostrado,
+                    descripcion = hortaliza.descripcion,
                     frecuenciaRiegoDias = 2,
                     ultimoRiego = getCurrentInstant()
                 )
@@ -144,7 +145,6 @@ class BancalViewModel(
                     .document(bancal.id)
                     .set(bancalActualizado)
 
-                // Corregido: Usar el nombre en español para el registro de actividad
                 val nombreHortaliza = hortaliza.nombreMostrado["es"] ?: hortaliza.nombre
                 registrarActividad(
                     tipo = TipoActividad.SIEMBRA,
@@ -172,7 +172,6 @@ class BancalViewModel(
                     cultivosActualizados[pos]?.let { cultivo ->
                         cultivosActualizados[pos] = cultivo.copy(ultimoRiego = ahora)
 
-                        // Corregido: Usar el nombre en español para la notificación
                         val nombrePlanta = cultivo.nombreHortaliza["es"] ?: ""
                         notificationScheduler?.scheduleRiegoNotification(
                             plantName = nombrePlanta,

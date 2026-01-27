@@ -46,11 +46,19 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = {
-                    Column {
-                        Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineLarge)
-                        Text(stringResource(Res.string.home_subtitle), style = MaterialTheme.typography.labelMedium)
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(Res.string.app_name),
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(Res.string.home_subtitle),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
                 },
                 actions = {
@@ -64,7 +72,6 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Person,
-                                // CORREGIDO: Usar una clave de recurso que sí existe, como profile_title
                                 contentDescription = stringResource(Res.string.profile_title),
                                 modifier = Modifier.padding(8.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -72,10 +79,11 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                         }
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.surface
-                )
+                ),
+                windowInsets = WindowInsets.statusBars
             )
         }
     ) { paddingValues ->

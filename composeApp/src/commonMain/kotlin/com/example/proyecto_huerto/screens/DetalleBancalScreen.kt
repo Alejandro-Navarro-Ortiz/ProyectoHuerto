@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -28,10 +29,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,12 +42,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.models.Bancal
+import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.Hortaliza
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import org.jetbrains.compose.resources.stringResource
@@ -120,6 +127,7 @@ fun DetalleBancalScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetalleBancalContent(
     bancal: Bancal,
@@ -131,6 +139,7 @@ private fun DetalleBancalContent(
     var posicionesSeleccionadas by remember { mutableStateOf(emptySet<String>()) }
     var justWateredPositions by remember { mutableStateOf(emptySet<String>()) }
     var dialogState by remember { mutableStateOf<DialogState>(DialogState.Hidden) }
+    var isMultipleSelectionMode by remember { mutableStateOf(false) }
 
     when (hortalizasState) {
         is HuertoUiState.Loading -> {
@@ -144,10 +153,55 @@ private fun DetalleBancalContent(
                 hortalizasDisponibles.associateBy { it.nombre }
             }
 
-            Scaffold {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(bancal.nombre) },
+                        actions = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Selección múltiple", style = MaterialTheme.typography.labelMedium)
+                                Spacer(Modifier.width(8.dp))
+                                Switch(
+                                    checked = isMultipleSelectionMode,
+                                    onCheckedChange = {
+                                        isMultipleSelectionMode = it
+                                        posicionesSeleccionadas = emptySet()
+                                    }
+                                )
+                            }
+                        }
+                    )
+                },
+                bottomBar = {
+                    if (isMultipleSelectionMode && posicionesSeleccionadas.isNotEmpty()) {
+                        BottomAppBar(
+                            actions = {
+                                Button(
+                                    onClick = { dialogState = DialogState.PlantSelection },
+                                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                ) {
+                                    Icon(Icons.Default.Grass, null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Sembrar (${posicionesSeleccionadas.size})")
+                                }
+                                Button(
+                                    onClick = { dialogState = DialogState.Watering },
+                                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                                ) {
+                                    Icon(Icons.Default.WaterDrop, null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Regar (${posicionesSeleccionadas.size})")
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(bancal.ancho),
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -165,11 +219,19 @@ private fun DetalleBancalContent(
                             hortalizasMap = hortalizasMap,
                             language = currentLanguage
                         ) {
-                            posicionesSeleccionadas = setOf(posicion)
-                            if (bancal.cultivos[posicion] != null) {
-                                dialogState = DialogState.Watering
+                            if (isMultipleSelectionMode) {
+                                posicionesSeleccionadas = if (isSelected) {
+                                    posicionesSeleccionadas - posicion
+                                } else {
+                                    posicionesSeleccionadas + posicion
+                                }
                             } else {
-                                dialogState = DialogState.PlantSelection
+                                posicionesSeleccionadas = setOf(posicion)
+                                if (bancal.cultivos[posicion] != null) {
+                                    dialogState = DialogState.Watering
+                                } else {
+                                    dialogState = DialogState.PlantSelection
+                                }
                             }
                         }
                     }
@@ -182,7 +244,7 @@ private fun DetalleBancalContent(
                             language = currentLanguage,
                             onDismiss = {
                                 dialogState = DialogState.Hidden
-                                posicionesSeleccionadas = emptySet()
+                                if (!isMultipleSelectionMode) posicionesSeleccionadas = emptySet()
                             },
                             onSelect = { hortaliza ->
                                 val enemigos = verificarIncompatibilidad(
@@ -229,7 +291,7 @@ private fun DetalleBancalContent(
                             },
                             onDismiss = {
                                 dialogState = DialogState.Hidden
-                                posicionesSeleccionadas = emptySet()
+                                if (!isMultipleSelectionMode) posicionesSeleccionadas = emptySet()
                             }
                         )
                     }
@@ -370,8 +432,7 @@ private fun verificarIncompatibilidad(
                 val posVecina = "$nf-$nc"
 
                 bancal.cultivos[posVecina]?.let { cultivoVecino ->
-                    val nombreHortalizaVecina = cultivoVecino.nombreHortaliza["es"] ?: cultivoVecino.nombreHortaliza.values.firstOrNull() ?: ""
-                    val hortalizaVecina = hortalizasMap[nombreHortalizaVecina]
+                    val hortalizaVecina = hortalizasMap[cultivoVecino.hortalizaId]
 
                     hortalizaVecina?.let { vecina ->
                         if (vecina.incompatibles.contains(nombreNueva) || incompatiblesConNueva.contains(vecina.nombre)) {
@@ -387,7 +448,7 @@ private fun verificarIncompatibilidad(
 
 @Composable
 fun CeldaBancal(
-    cultivo: Bancal.Cultivo?,
+    cultivo: Cultivo?,
     isSelected: Boolean,
     isJustWatered: Boolean,
     hortalizasMap: Map<String, Hortaliza>,
@@ -395,11 +456,10 @@ fun CeldaBancal(
     onClick: () -> Unit
 ) {
     val hortaliza = cultivo?.let { c ->
-        val nombre = c.nombreHortaliza[language] ?: c.nombreHortaliza["es"]
-        hortalizasMap[nombre]
+        hortalizasMap[c.hortalizaId]
     }
 
-    val isWatered = cultivo?.regado ?: false
+    val isWatered = cultivo?.let { !it.necesitaRiego } ?: false
 
     Card(
         modifier = Modifier
@@ -409,7 +469,7 @@ fun CeldaBancal(
         border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (hortaliza != null) {
                 Text(hortaliza.icono, fontSize = 28.sp)
                 if (isWatered) {
