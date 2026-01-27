@@ -58,6 +58,28 @@ class ProfileViewModel : ViewModel() {
     }
 
     /**
+     * Actualiza el nombre de usuario en Firebase Auth y en la colección de Firestore.
+     */
+    fun updateDisplayName(newName: String) {
+        val userObj = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                // En GitLive Firebase SDK, pasamos el displayName directamente
+                userObj.updateProfile(displayName = newName)
+
+                // Actualizamos también en nuestra colección de usuarios en Firestore
+                db.collection("usuarios").document(userObj.uid)
+                    .set(mapOf("username" to newName), merge = true)
+
+                // Recargamos los datos del usuario para actualizar el StateFlow y la UI
+                refreshUser()
+            } catch (e: Exception) {
+                println("DEBUG_PROFILE: Error al actualizar nombre: ${e.message}")
+            }
+        }
+    }
+
+    /**
      * Proceso completo de actualización de foto de perfil:
      * 1. Sube el array de bytes a Firebase Storage.
      * 2. Actualiza la URL en el perfil de Firebase Auth.
@@ -73,7 +95,7 @@ class ProfileViewModel : ViewModel() {
                 val downloadUrl = storageManager.uploadImage(userObj.uid, imageData)
 
                 if (downloadUrl != null) {
-                    // 2. Vinculación con el perfil de autenticación
+                    // 2. Vinculación con el perfil de autenticación (GitLive SDK utiliza parámetros directos)
                     userObj.updateProfile(photoUrl = downloadUrl)
 
                     // 3. Persistencia en la base de datos de usuarios
@@ -87,8 +109,7 @@ class ProfileViewModel : ViewModel() {
                         println("DEBUG_IMAGE: Error recargando usuario: ${e.message}")
                     }
 
-                    // 5. Cache busting: añadimos un timestamp para que el cargador de imágenes
-                    // (Kamel) detecte un cambio de URL y no use la imagen antigua de la caché.
+                    // 5. Cache busting para forzar recarga en la UI
                     val separator = if (downloadUrl.contains("?")) "&" else "?"
                     val uniqueUrl = "$downloadUrl${separator}t=${getCurrentEpochMillis()}"
 

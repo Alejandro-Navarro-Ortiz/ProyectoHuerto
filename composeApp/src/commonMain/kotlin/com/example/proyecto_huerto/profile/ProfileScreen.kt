@@ -4,7 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -51,6 +53,10 @@ fun ProfileScreen(
     val userData by viewModel.user.collectAsState()
     val isUploading by viewModel.isUploading.collectAsState()
 
+    // Estado para el diálogo de edición de nombre
+    var showEditNameDialog by remember { mutableStateOf(false) }
+    var nuevoNombre by remember { mutableStateOf("") }
+
     // Inicializador del selector de imágenes nativo (Android/iOS)
     val imagePicker = rememberImagePicker { bytes ->
         viewModel.uploadProfilePicture(bytes)
@@ -82,7 +88,7 @@ fun ProfileScreen(
             color = MaterialTheme.colorScheme.background
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(20.dp),
+                modifier = Modifier.fillMaxSize().padding(20.dp).verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // SECCIÓN: FOTO DE PERFIL CON GESTIÓN DE CARGA
@@ -100,7 +106,6 @@ fun ProfileScreen(
                     ) {
                         val photoUrl = userData?.profilePictureUrl
                         if (!photoUrl.isNullOrBlank()) {
-                            // Usamos key para forzar la recarga si la URL cambia (evita caché)
                             key(photoUrl) {
                                 KamelImage(
                                     resource = asyncPainterResource(photoUrl),
@@ -116,7 +121,6 @@ fun ProfileScreen(
                         }
                     }
 
-                    // Indicador de carga durante la subida a Firebase Storage
                     if (isUploading) {
                         CircularProgressIndicator(
                             modifier = Modifier.fillMaxSize(),
@@ -125,7 +129,6 @@ fun ProfileScreen(
                         )
                     }
 
-                    // Botón flotante para activar el selector de cámara/galería
                     Surface(
                         onClick = { if (!isUploading) imagePicker.launch() },
                         modifier = Modifier.size(34.dp),
@@ -152,12 +155,32 @@ fun ProfileScreen(
                     elevation = CardDefaults.cardElevation(1.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        ProfileInfoRow(
-                            Icons.Default.Person,
-                            stringResource(Res.string.profile_user),
-                            userData?.username ?: stringResource(Res.string.profile_guest)
-                        )
+                        // Fila de Nombre (USER) - Ahora es clicable para editar
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    nuevoNombre = userData?.username ?: ""
+                                    showEditNameDialog = true
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            ProfileInfoRow(
+                                Icons.Default.Person,
+                                stringResource(Res.string.profile_user),
+                                userData?.username ?: stringResource(Res.string.profile_guest)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar nombre",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
+
                         ProfileInfoRow(
                             Icons.Default.Email,
                             stringResource(Res.string.profile_email),
@@ -175,7 +198,6 @@ fun ProfileScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(modifier = Modifier.padding(8.dp)) {
-                        // Fila de Modo Oscuro
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -191,7 +213,6 @@ fun ProfileScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
-                        // Selector de Idioma (Menú Desplegable)
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -207,7 +228,6 @@ fun ProfileScreen(
                             val currentLangLabel = if (currentLanguage == "es") stringResource(Res.string.profile_lang_es) else stringResource(Res.string.profile_lang_en)
 
                             Box {
-                                // Botón que activa el desplegable
                                 Surface(
                                     onClick = { expanded = true },
                                     modifier = Modifier.height(40.dp),
@@ -225,7 +245,6 @@ fun ProfileScreen(
                                     }
                                 }
 
-                                // Menú Desplegable con opciones de idioma
                                 DropdownMenu(
                                     expanded = expanded,
                                     onDismissRequest = { expanded = false }
@@ -252,9 +271,8 @@ fun ProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // BOTÓN DE CIERRE DE SESIÓN
                 Button(
                     onClick = onSignOut,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -264,6 +282,40 @@ fun ProfileScreen(
                     Text(stringResource(Res.string.profile_sign_out), fontWeight = FontWeight.Bold)
                 }
             }
+        }
+
+        // DIÁLOGO PARA EDITAR EL NOMBRE
+        if (showEditNameDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditNameDialog = false },
+                title = { Text("Cambiar nombre de usuario") },
+                text = {
+                    OutlinedTextField(
+                        value = nuevoNombre,
+                        onValueChange = { nuevoNombre = it },
+                        label = { Text("Nombre") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (nuevoNombre.isNotBlank()) {
+                                viewModel.updateDisplayName(nuevoNombre)
+                                showEditNameDialog = false
+                            }
+                        }
+                    ) {
+                        Text("Guardar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditNameDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
     }
 }
