@@ -33,6 +33,7 @@ import com.example.proyecto_huerto.profile.ProfileViewModel
 import com.example.proyecto_huerto.screens.*
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
+import com.google.type.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -64,12 +65,12 @@ fun AppNavHost(
 
     val notificationScheduler = NotificationScheduler(context)
 
-    // ViewModels
+    // ViewModels con tipos explícitos para evitar errores de inferencia
     val bancalViewModel: BancalViewModel = viewModel(
         factory = GenericViewModelFactory { BancalViewModel(notificationScheduler) }
     )
-    val diarioViewModel: DiarioViewModel = viewModel()
-    val huertoViewModel: HuertoViewModel = viewModel()
+    val diarioViewModel: DiarioViewModel = viewModel<DiarioViewModel>()
+    val huertoViewModel: HuertoViewModel = viewModel<HuertoViewModel>()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -238,14 +239,12 @@ fun AppNavHost(
                 onAbonarCultivos = { posiciones ->
                     val bancal = bancalViewModel.getBancalById(bancalId ?: "")
                     if (bancal != null) {
-                        // Llama al método correspondiente en tu ViewModel
                         bancalViewModel.abonarCultivos(bancal, posiciones)
                     }
                 },
                 onCosecharCultivos = { posiciones ->
                     val bancal = bancalViewModel.getBancalById(bancalId ?: "")
                     if (bancal != null) {
-                        // Llama al método correspondiente en tu ViewModel
                         bancalViewModel.cosecharCultivos(bancal, posiciones)
                     }
                 }
@@ -253,7 +252,7 @@ fun AppNavHost(
         }
 
         composable("profile") {
-            val profileViewModel: ProfileViewModel = viewModel()
+            val profileViewModel: ProfileViewModel = viewModel<ProfileViewModel>()
             ProfileScreen(
                 onSignOut = {
                     lifecycleScope.launch {
@@ -303,7 +302,8 @@ fun AppNavHost(
             PlagasScreen(
                 onPlagaClick = { plagaId -> navController.navigate("plaga_detalle/$plagaId") },
                 uiState = plagasState,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                language = currentLanguage
             )
         }
 
@@ -318,7 +318,8 @@ fun AppNavHost(
                 PlagaDetailScreen(
                     plagaId = plagaId,
                     uiState = plagasState,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    language = currentLanguage
                 )
             }
         }
