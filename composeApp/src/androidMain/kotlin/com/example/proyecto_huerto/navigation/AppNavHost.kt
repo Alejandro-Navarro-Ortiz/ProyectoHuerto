@@ -234,6 +234,20 @@ fun AppNavHost(
                     if (bancal != null) {
                         bancalViewModel.regarCultivos(bancal, posiciones)
                     }
+                },
+                onAbonarCultivos = { posiciones ->
+                    val bancal = bancalViewModel.getBancalById(bancalId ?: "")
+                    if (bancal != null) {
+                        // Llama al método correspondiente en tu ViewModel
+                        bancalViewModel.abonarCultivos(bancal, posiciones)
+                    }
+                },
+                onCosecharCultivos = { posiciones ->
+                    val bancal = bancalViewModel.getBancalById(bancalId ?: "")
+                    if (bancal != null) {
+                        // Llama al método correspondiente en tu ViewModel
+                        bancalViewModel.cosecharCultivos(bancal, posiciones)
+                    }
                 }
             )
         }
@@ -319,10 +333,6 @@ fun AppNavHost(
     }
 }
 
-/**
- * Una ViewModel Factory genérica para poder instanciar ViewModels que requieren dependencias
- * en su constructor (como el NotificationScheduler).
- */
 class GenericViewModelFactory<T : ViewModel>(private val creator: () -> T) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
