@@ -38,9 +38,6 @@ class BancalViewModel(
         saveNotificationToken()
     }
 
-    /**
-     * Obtiene y guarda el token de FCM del usuario actual para habilitar notificaciones push.
-     */
     private fun saveNotificationToken() {
         viewModelScope.launch {
             auth.authStateChanged.collectLatest { user ->
@@ -49,18 +46,14 @@ class BancalViewModel(
                         val token = Firebase.messaging.getToken()
                         db.collection("usuarios").document(user.uid)
                             .set(mapOf("fcmToken" to token), merge = true)
-                        println("DEBUG: Token FCM sincronizado con éxito")
                     } catch (e: Exception) {
-                        println("ERROR: Error al registrar token en Firestore: ${e.message}")
+                        println("ERROR FCM: ${e.message}")
                     }
                 }
             }
         }
     }
 
-    /**
-     * Escucha en tiempo real los cambios en la colección de bancales del usuario en Firestore.
-     */
     private fun listenToBancales() {
         viewModelScope.launch {
             auth.authStateChanged.flatMapLatest { user ->
@@ -70,14 +63,13 @@ class BancalViewModel(
                     flowOf(null)
                 }
             }.catch { e ->
-                println("ERROR GENERAL FIRESTORE: ${e.message}")
+                println("ERROR FIRESTORE: ${e.message}")
             }.collect { snapshot ->
                 if (snapshot != null) {
                     _bancales.value = snapshot.documents.mapNotNull { doc ->
                         try {
                             doc.data<Bancal>().copy(id = doc.id)
                         } catch (e: Exception) {
-                            println("ERROR AL LEER BANCAL (${doc.id}): ${e.message}")
                             null
                         }
                     }
@@ -88,9 +80,6 @@ class BancalViewModel(
         }
     }
 
-    /**
-     * Registra una nueva actividad (siembra, riego, etc.) en el diario del usuario.
-     */
     private fun registrarActividad(tipo: TipoActividad, nombreBancal: String, detalle: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -104,14 +93,11 @@ class BancalViewModel(
                 )
                 db.collection("usuarios").document(user.uid).collection("actividades").add(actividad)
             } catch (e: Exception) {
-                println("Error al registrar actividad: ${e.message}")
+                println("Error actividad: ${e.message}")
             }
         }
     }
 
-    /**
-     * Crea un nuevo bancal en la base de datos.
-     */
     fun addBancal(nombre: String, ancho: Int, largo: Int) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -124,16 +110,13 @@ class BancalViewModel(
         }
     }
 
-    /**
-     * Actualiza la información de los cultivos en posiciones específicas de un bancal.
-     * Al sembrar, se establece una frecuencia de riego por defecto de 2 días.
-     */
     fun updateCultivos(bancal: Bancal, posiciones: List<String>, hortaliza: Hortaliza) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val nuevoCultivo = Cultivo(
+                    hortalizaId = hortaliza.nombre, // ESENCIAL: Guardar el ID para recuperarlo
                     nombreHortaliza = hortaliza.nombreMostrado,
                     frecuenciaRiegoDias = 2,
                     ultimoRiego = getCurrentInstant()
@@ -144,22 +127,18 @@ class BancalViewModel(
                     .document(bancal.id)
                     .set(bancalActualizado)
 
-                val nombreHortaliza = hortaliza.nombreMostrado["es"] ?: hortaliza.nombre
+                val nombreHortalizaStr = hortaliza.nombreMostrado["es"] ?: hortaliza.nombre
                 registrarActividad(
                     tipo = TipoActividad.SIEMBRA,
                     nombreBancal = bancal.nombre,
-                    detalle = "Sembrado: $nombreHortaliza (${posiciones.size} celdas)"
+                    detalle = "Sembrado: $nombreHortalizaStr (${posiciones.size} celdas)"
                 )
             } catch (e: Exception) {
-                println("ERROR AL ACTUALIZAR EL CULTIVO: ${e.message}")
+                println("ERROR SIEMBRA: ${e.message}")
             }
         }
     }
 
-    /**
-     * Actualiza la fecha de último riego para los cultivos seleccionados y
-     * programa una notificación de recordatorio para el próximo riego.
-     */
     fun regarCultivos(bancal: Bancal, posiciones: List<String>) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -170,7 +149,6 @@ class BancalViewModel(
                 posiciones.forEach { pos ->
                     cultivosActualizados[pos]?.let { cultivo ->
                         cultivosActualizados[pos] = cultivo.copy(ultimoRiego = ahora)
-
                         val nombrePlanta = cultivo.nombreHortaliza["es"] ?: ""
                         notificationScheduler?.scheduleRiegoNotification(
                             plantName = nombrePlanta,
@@ -190,47 +168,35 @@ class BancalViewModel(
                     detalle = "Regadas ${posiciones.size} secciones"
                 )
             } catch (e: Exception) {
-                println("ERROR AL REGAR LOS CULTIVOS: ${e.message}")
+                println("ERROR RIEGO: ${e.message}")
             }
         }
     }
 
-    /**
-     * Registra el abonado de los cultivos seleccionados.
-     * En el futuro, esto podría resetear o mejorar ciertos stats del cultivo.
-     */
     fun abonarCultivos(bancal: Bancal, posiciones: List<String>) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
-                // Por ahora el abonado es un registro de actividad,
-                // pero podrías añadir un campo 'ultimoAbonado' al modelo Cultivo si lo deseas.
                 registrarActividad(
-                    tipo = TipoActividad.ABONADO, // Asegúrate de tener este tipo en tu enum TipoActividad
+                    tipo = TipoActividad.ABONADO,
                     nombreBancal = bancal.nombre,
-                    detalle = "Abonadas ${posiciones.size} secciones del bancal"
+                    detalle = "Abonadas ${posiciones.size} secciones"
                 )
             } catch (e: Exception) {
-                println("ERROR AL ABONAR LOS CULTIVOS: ${e.message}")
+                println("ERROR ABONO: ${e.message}")
             }
         }
     }
 
-    /**
-     * Elimina los cultivos del bancal tras la cosecha y registra la actividad.
-     */
     fun cosecharCultivos(bancal: Bancal, posiciones: List<String>) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
                 val cultivosActualizados = bancal.cultivos.toMutableMap()
-
-                // Recopilamos nombres para el detalle del diario antes de borrar
                 val nombresCosechados = posiciones.mapNotNull {
                     cultivosActualizados[it]?.nombreHortaliza?.get("es")
                 }.distinct().joinToString(", ")
 
-                // Quitamos las plantas de las celdas seleccionadas
                 posiciones.forEach { cultivosActualizados.remove(it) }
 
                 val bancalActualizado = bancal.copy(cultivos = cultivosActualizados)
@@ -239,19 +205,16 @@ class BancalViewModel(
                     .set(bancalActualizado)
 
                 registrarActividad(
-                    tipo = TipoActividad.COSECHA, // Asegúrate de tener este tipo en tu enum TipoActividad
+                    tipo = TipoActividad.COSECHA,
                     nombreBancal = bancal.nombre,
                     detalle = "Cosechado: $nombresCosechados (${posiciones.size} celdas liberadas)"
                 )
             } catch (e: Exception) {
-                println("ERROR AL COSECHAR LOS CULTIVOS: ${e.message}")
+                println("ERROR COSECHA: ${e.message}")
             }
         }
     }
 
-    /**
-     * Elimina un bancal por su ID.
-     */
     fun deleteBancal(bancalId: String) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
@@ -260,7 +223,7 @@ class BancalViewModel(
                     .document(bancalId)
                     .delete()
             } catch (e: Exception) {
-                println("ERROR AL ELIMINAR BANCAL: ${e.message}")
+                println("ERROR ELIMINAR: ${e.message}")
             }
         }
     }
