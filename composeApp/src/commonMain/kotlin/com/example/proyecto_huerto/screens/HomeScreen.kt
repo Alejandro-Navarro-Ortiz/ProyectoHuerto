@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyecto_huerto.weather.WeatherState
 import org.jetbrains.compose.resources.stringResource
 import proyectohuerto.composeapp.generated.resources.*
 
@@ -35,7 +36,12 @@ data class HomeOption(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
+fun HomeScreen(
+    weatherState: WeatherState,
+    recentActivities: List<String>,
+    onNavigate: (String) -> Unit,
+    onRefreshWeather: () -> Unit
+) {
     // Definición de las opciones del menú principal
     val navOptions = listOf(
         HomeOption(Res.string.home_bancales_title, Icons.Filled.Yard, "gestion_bancales", Res.string.home_bancales_desc),
@@ -94,6 +100,11 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Widget del Clima
+            item {
+                WeatherWidget(state = weatherState, onRefresh = onRefreshWeather)
+            }
+
             item {
                 Text(
                     stringResource(Res.string.home_services),
@@ -151,6 +162,114 @@ fun HomeScreen(recentActivities: List<String>, onNavigate: (String) -> Unit) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            when (state) {
+                is WeatherState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).align(Alignment.Center),
+                        strokeWidth = 2.dp
+                    )
+                }
+                is WeatherState.Success -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = getWeatherIcon(state.weatherCode),
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = "${state.temperature}°C",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = getWeatherDescription(state.weatherCode),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Actualizar",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+                is WeatherState.Error -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Clima no disponible",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Reintentar",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun getWeatherIcon(code: Int): ImageVector {
+    return when (code) {
+        0 -> Icons.Default.WbSunny
+        1, 2, 3 -> Icons.Default.CloudQueue
+        45, 48 -> Icons.Default.Cloud
+        51, 53, 55, 61, 63, 65 -> Icons.Default.Umbrella
+        71, 73, 75 -> Icons.Default.AcUnit
+        80, 81, 82 -> Icons.Default.Thunderstorm
+        else -> Icons.Default.Cloud
+    }
+}
+
+fun getWeatherDescription(code: Int): String {
+    return when (code) {
+        0 -> "Despejado"
+        1, 2, 3 -> "Parcialmente nublado"
+        45, 48 -> "Niebla"
+        51, 53, 55 -> "Llovizna"
+        61, 63, 65 -> "Lluvia"
+        71, 73, 75 -> "Nieve"
+        80, 81, 82 -> "Chubascos"
+        95, 96, 99 -> "Tormenta"
+        else -> "Nublado"
     }
 }
 

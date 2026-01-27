@@ -48,6 +48,9 @@ kotlin {
 
             // Motor Ktor para Android
             implementation(libs.ktor.client.okhttp)
+
+            // Ubicación para Android
+            implementation(libs.google.play.services.location)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -70,6 +73,8 @@ kotlin {
 
             // Core de Ktor para KMP
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.contentNegotiation)
+            implementation(libs.ktor.serialization.kotlinxJson)
 
             // Serialización
             implementation(libs.kotlinx.serialization.core)

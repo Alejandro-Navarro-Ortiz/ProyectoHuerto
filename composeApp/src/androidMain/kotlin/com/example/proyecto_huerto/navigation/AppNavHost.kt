@@ -27,12 +27,15 @@ import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.auth.SignInScreen
 import com.example.proyecto_huerto.auth.SignInViewModel
 import com.example.proyecto_huerto.auth.SignUpScreen
+import com.example.proyecto_huerto.location.AndroidLocationService
 import com.example.proyecto_huerto.notifications.NotificationScheduler
 import com.example.proyecto_huerto.profile.ProfileScreen
 import com.example.proyecto_huerto.profile.ProfileViewModel
 import com.example.proyecto_huerto.screens.*
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
+import com.example.proyecto_huerto.weather.WeatherRepository
+import com.example.proyecto_huerto.weather.WeatherViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -70,20 +73,45 @@ fun AppNavHost(
     )
     val diarioViewModel: DiarioViewModel = viewModel<DiarioViewModel>()
     val huertoViewModel: HuertoViewModel = viewModel<HuertoViewModel>()
+    
+    // Weather ViewModel setup
+    val weatherViewModel: WeatherViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            WeatherViewModel(
+                repository = WeatherRepository(),
+                locationService = AndroidLocationService(context)
+            )
+        }
+    )
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val notificationsGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
+        val locationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        
+        if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Toast.makeText(context, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
+        }
+        if (locationGranted) {
+            weatherViewModel.loadWeather()
         }
     }
 
     LaunchedEffect(Unit) {
+        val permissionsToRequest = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        
+        if (permissionsToRequest.isNotEmpty()) {
+            permissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
 
@@ -205,14 +233,17 @@ fun AppNavHost(
 
         composable("home") {
             val actividades by diarioViewModel.actividades.collectAsState()
+            val weatherState by weatherViewModel.weatherState.collectAsState()
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
             HomeScreen(
+                weatherState = weatherState,
                 recentActivities = actividades.map {
                     val formattedDate = sdf.format(Date(it.fecha))
                     "${it.tipo} en ${it.nombreBancal}: ${it.detalle} - $formattedDate"
                 }.reversed(),
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigate(route) },
+                onRefreshWeather = { weatherViewModel.loadWeather() }
             )
         }
 
