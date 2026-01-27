@@ -207,7 +207,7 @@ fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = getWeatherDescription(state.weatherCode),
+                                    text = stringResource(getWeatherDescription(state.weatherCode)),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -216,7 +216,7 @@ fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
                         IconButton(onClick = onRefresh) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Actualizar",
+                                contentDescription = stringResource(Res.string.weather_refresh),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -229,14 +229,15 @@ fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Clima no disponible",
+                            text = stringResource(Res.string.weather_error),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error
                         )
                         IconButton(onClick = onRefresh) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Reintentar",
+                                contentDescription = stringResource(Res.string.weather_retry),
+                                modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -259,17 +260,17 @@ fun getWeatherIcon(code: Int): ImageVector {
     }
 }
 
-fun getWeatherDescription(code: Int): String {
+fun getWeatherDescription(code: Int): org.jetbrains.compose.resources.StringResource {
     return when (code) {
-        0 -> "Despejado"
-        1, 2, 3 -> "Parcialmente nublado"
-        45, 48 -> "Niebla"
-        51, 53, 55 -> "Llovizna"
-        61, 63, 65 -> "Lluvia"
-        71, 73, 75 -> "Nieve"
-        80, 81, 82 -> "Chubascos"
-        95, 96, 99 -> "Tormenta"
-        else -> "Nublado"
+        0 -> Res.string.weather_sunny
+        1, 2, 3 -> Res.string.weather_cloudy_part
+        45, 48 -> Res.string.weather_foggy
+        51, 53, 55 -> Res.string.weather_drizzle
+        61, 63, 65 -> Res.string.weather_rain
+        71, 73, 75 -> Res.string.weather_snow
+        80, 81, 82 -> Res.string.weather_showers
+        95, 96, 99 -> Res.string.weather_storm
+        else -> Res.string.weather_cloudy
     }
 }
 

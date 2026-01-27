@@ -55,6 +55,20 @@
     <string name="home_about_desc">Información de la app</string>
     <string name="home_recent_activity">Actividad Reciente</string>
 
+    <!-- Clima -->
+    <string name="weather_refresh">Actualizar</string>
+    <string name="weather_retry">Reintentar</string>
+    <string name="weather_error">Clima no disponible</string>
+    <string name="weather_sunny">Despejado</string>
+    <string name="weather_cloudy_part">Parcialmente nublado</string>
+    <string name="weather_foggy">Niebla</string>
+    <string name="weather_drizzle">Llovizna</string>
+    <string name="weather_rain">Lluvia</string>
+    <string name="weather_snow">Nieve</string>
+    <string name="weather_showers">Chubascos</string>
+    <string name="weather_storm">Tormenta</string>
+    <string name="weather_cloudy">Nublado</string>
+
     <!-- Gestión Bancales -->
     <string name="bancales_title">Mis Bancales</string>
     <string name="bancales_empty">Aún no has creado bancales</string>
