@@ -1,5 +1,6 @@
 package com.example.proyecto_huerto.auth
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,21 +22,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import proyectohuerto.composeapp.generated.resources.Res
-import proyectohuerto.composeapp.generated.resources.fotologo
-import proyectohuerto.composeapp.generated.resources.auth_email
-import proyectohuerto.composeapp.generated.resources.auth_password
-import proyectohuerto.composeapp.generated.resources.signup_button
-import proyectohuerto.composeapp.generated.resources.signup_already_account
+import proyectohuerto.composeapp.generated.resources.*
 
 /**
  * Pantalla de registro de usuario.
  * Mantiene coherencia visual con la pantalla de SignIn incluyendo el mismo fondo
- * y disposición de elementos.
+ * y disposición de elementos, además del botón de registro con Google.
  */
 @Composable
 fun SignUpScreen(
     onSignUpClick: (String, String) -> Unit,
+    onSignInClick: () -> Unit,
     onNavigateToSignIn: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -136,6 +133,33 @@ fun SignUpScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Botón de Google para Registro
+            OutlinedButton(
+                onClick = onSignInClick,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.ic_google_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(Res.string.signin_google),
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }

@@ -33,7 +33,6 @@ import com.example.proyecto_huerto.profile.ProfileViewModel
 import com.example.proyecto_huerto.screens.*
 import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
-import com.google.type.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -162,6 +161,20 @@ fun AppNavHost(
             val signInViewModel = viewModel<SignInViewModel>()
             val state by signInViewModel.state.collectAsState()
 
+            val launcher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult(),
+                onResult = { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
+                        lifecycleScope.launch {
+                            val signInResult = googleAuthUiClient.signInWithIntent(
+                                intent = result.data ?: return@launch
+                            )
+                            signInViewModel.onSignInResult(signInResult)
+                        }
+                    }
+                }
+            )
+
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
                     navController.navigate("home") {
@@ -176,6 +189,14 @@ fun AppNavHost(
                     lifecycleScope.launch {
                         val result = googleAuthUiClient.signUpWithEmail(email, password)
                         signInViewModel.onSignInResult(result)
+                    }
+                },
+                onSignInClick = {
+                    lifecycleScope.launch {
+                        val signInIntentSender = googleAuthUiClient.signIn()
+                        launcher.launch(
+                            IntentSenderRequest.Builder(signInIntentSender ?: return@launch).build()
+                        )
                     }
                 },
                 onNavigateToSignIn = { navController.popBackStack() }
