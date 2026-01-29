@@ -1,14 +1,16 @@
 package com.example.proyecto_huerto.profile
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,12 +19,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyecto_huerto.ui.components.CommonTopBar
 import com.example.proyecto_huerto.util.rememberImagePicker
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
@@ -31,14 +35,10 @@ import proyectohuerto.composeapp.generated.resources.Res
 import proyectohuerto.composeapp.generated.resources.*
 
 /**
- * Pantalla de perfil de usuario mejorada con selectores de personalización.
- * Permite gestionar:
- * 1. Foto de perfil (Subida a Firebase).
- * 2. Datos personales (Nombre y Email).
- * 3. Preferencias visuales (Modo Oscuro).
- * 4. Preferencias de idioma (Español/Inglés) mediante un menú desplegable con banderas.
+ * Pantalla de perfil de usuario renovada con un estilo moderno y funcional.
+ * Mantiene la coherencia visual con el resto de la app mediante degradados y
+ * una barra superior limpia y profesional.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onSignOut: () -> Unit,
@@ -53,47 +53,60 @@ fun ProfileScreen(
     val userData by viewModel.user.collectAsState()
     val isUploading by viewModel.isUploading.collectAsState()
 
-    // Estado para el diálogo de edición de nombre
     var showEditNameDialog by remember { mutableStateOf(false) }
     var nuevoNombre by remember { mutableStateOf("") }
 
-    // Inicializador del selector de imágenes nativo (Android/iOS)
     val imagePicker = rememberImagePicker { bytes ->
         viewModel.uploadProfilePicture(bytes)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.profile_title), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.profile_back))
+    // Degradado radial sutil para coherencia visual (igual que SignIn/Splash)
+    val backgroundBrush = Brush.radialGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+            Color.Transparent
+        ),
+        center = Offset(0f, 0f),
+        radius = 1000f
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .background(backgroundBrush)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                CommonTopBar(
+                    title = stringResource(Res.string.profile_title),
+                    onBack = onBack,
+                    actions = {
+                        IconButton(onClick = onNavigateToAbout) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = stringResource(Res.string.profile_info),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToAbout) {
-                        Icon(Icons.Default.Info, stringResource(Res.string.profile_info))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            )
-        }
-    ) { padding ->
-        Surface(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            color = MaterialTheme.colorScheme.background
-        ) {
+            }
+        ) { padding ->
             Column(
-                modifier = Modifier.fillMaxSize().padding(20.dp).verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // SECCIÓN: FOTO DE PERFIL CON GESTIÓN DE CARGA
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // SECCIÓN: FOTO DE PERFIL
                 Box(
-                    modifier = Modifier.size(110.dp),
+                    modifier = Modifier.size(120.dp),
                     contentAlignment = Alignment.BottomEnd
                 ) {
                     Surface(
@@ -102,7 +115,7 @@ fun ProfileScreen(
                             .clip(CircleShape)
                             .clickable { if (!isUploading) imagePicker.launch() },
                         color = MaterialTheme.colorScheme.surfaceVariant,
-                        shadowElevation = 2.dp
+                        shadowElevation = 4.dp
                     ) {
                         val photoUrl = userData?.profilePictureUrl
                         if (!photoUrl.isNullOrBlank()) {
@@ -131,31 +144,38 @@ fun ProfileScreen(
 
                     Surface(
                         onClick = { if (!isUploading) imagePicker.launch() },
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(36.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primary,
-                        tonalElevation = 8.dp
+                        tonalElevation = 6.dp
                     ) {
                         Icon(
                             Icons.Default.PhotoCamera,
                             contentDescription = stringResource(Res.string.profile_change_photo),
                             modifier = Modifier.padding(8.dp),
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // SECCIÓN: INFORMACIÓN DE CUENTA (Nombre y Correo)
+                // SECCIÓN: INFORMACIÓN DE CUENTA
+                Text(
+                    text = "Información Personal",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.Start).padding(bottom = 12.dp, start = 4.dp)
+                )
+                
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(1.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Fila de Nombre (USER) - Ahora es clicable para editar
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -174,12 +194,12 @@ fun ProfileScreen(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Editar nombre",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
                         ProfileInfoRow(
                             Icons.Default.Email,
@@ -189,13 +209,21 @@ fun ProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // SECCIÓN: PREFERENCIAS (MODO OSCURO E IDIOMA)
+                // SECCIÓN: PREFERENCIAS
+                Text(
+                    text = "Preferencias",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.Start).padding(bottom = 12.dp, start = 4.dp)
+                )
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(8.dp)) {
                         Row(
@@ -204,9 +232,23 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Box(
+                                    modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode, 
+                                        null, 
+                                        tint = MaterialTheme.colorScheme.primary, 
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                                 Spacer(Modifier.width(12.dp))
-                                Text(stringResource(Res.string.profile_dark_mode), style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = stringResource(Res.string.profile_dark_mode), 
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                             Switch(checked = isDarkMode, onCheckedChange = { onToggleDarkMode() })
                         }
@@ -219,9 +261,18 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Box(
+                                    modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                }
                                 Spacer(Modifier.width(12.dp))
-                                Text(stringResource(Res.string.profile_language), style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = stringResource(Res.string.profile_language), 
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
 
                             var expanded by remember { mutableStateOf(false) }
@@ -230,18 +281,23 @@ fun ProfileScreen(
                             Box {
                                 Surface(
                                     onClick = { expanded = true },
-                                    modifier = Modifier.height(40.dp),
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    modifier = Modifier.height(36.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 12.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text(currentLangLabel, style = MaterialTheme.typography.bodyMedium)
-                                        Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp))
+                                        Text(
+                                            text = currentLangLabel, 
+                                            style = MaterialTheme.typography.bodyMedium, 
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                                     }
                                 }
 
@@ -271,41 +327,47 @@ fun ProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-                Button(
+                OutlinedButton(
                     onClick = onSignOut,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                 ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(stringResource(Res.string.profile_sign_out), fontWeight = FontWeight.Bold)
                 }
+                
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
 
-        // DIÁLOGO PARA EDITAR EL NOMBRE
         if (showEditNameDialog) {
             AlertDialog(
                 onDismissRequest = { showEditNameDialog = false },
-                title = { Text("Cambiar nombre de usuario") },
+                title = { Text("Editar Nombre") },
                 text = {
                     OutlinedTextField(
                         value = nuevoNombre,
                         onValueChange = { nuevoNombre = it },
-                        label = { Text("Nombre") },
+                        label = { Text("Nombre de usuario") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                 },
                 confirmButton = {
-                    TextButton(
+                    Button(
                         onClick = {
                             if (nuevoNombre.isNotBlank()) {
                                 viewModel.updateDisplayName(nuevoNombre)
                                 showEditNameDialog = false
                             }
-                        }
+                        },
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("Guardar")
                     }
@@ -320,24 +382,28 @@ fun ProfileScreen(
     }
 }
 
-/**
- * Muestra una fila de información con un diseño consistente.
- */
 @Composable
 fun ProfileInfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Box(
+            modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        }
         Spacer(Modifier.width(12.dp))
         Column {
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(value, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = value, 
+                style = MaterialTheme.typography.bodyLarge, 
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
 
-/**
- * Representación visual cuando el usuario no tiene una foto establecida.
- */
 @Composable
 fun DefaultAvatar(username: String?) {
     Box(

@@ -3,10 +3,12 @@ package com.example.proyecto_huerto
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -18,7 +20,6 @@ import com.example.proyecto_huerto.auth.GoogleAuthUiClient
 import com.example.proyecto_huerto.navigation.AppNavHost
 import com.example.proyecto_huerto.ui.theme.ProyectoHuertoTheme
 import com.google.android.gms.auth.api.identity.Identity
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
@@ -62,13 +63,26 @@ class MainActivity : AppCompatActivity() {
                 isFirstRun = false
             }
 
-            // Clave única basada en el idioma actual para forzar la recomposición completa 
-            // de Compose Multiplatform cuando el idioma cambia.
+            // Aplicamos Edge-to-Edge dinámico según el modo seleccionado
+            // Esto ajustará la barra de navegación (botones de abajo) y la barra de estado.
+            LaunchedEffect(isDarkMode) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT,
+                        detectDarkMode = { isDarkMode }
+                    ),
+                    navigationBarStyle = SystemBarStyle.auto(
+                        Color.argb(0xe6, 0xff, 0xff, 0xff),
+                        Color.argb(0xe6, 0x11, 0x11, 0x11),
+                        detectDarkMode = { isDarkMode }
+                    )
+                )
+            }
+
             val currentLocale = AppCompatDelegate.getApplicationLocales().get(0)?.language ?: Locale.getDefault().language
 
             ProyectoHuertoTheme(darkTheme = isDarkMode) {
-                // Usamos key(currentLocale) para que si el idioma cambia, Compose
-                // destruya y vuelva a crear el grafo de navegación con los nuevos recursos.
                 key(currentLocale) {
                     AppNavHost(
                         googleAuthUiClient = googleAuthUiClient,
