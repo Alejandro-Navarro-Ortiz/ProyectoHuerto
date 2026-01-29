@@ -68,6 +68,15 @@
     <string name="weather_showers">Chubascos</string>
     <string name="weather_storm">Tormenta</string>
     <string name="weather_cloudy">Nublado</string>
+    <string name="weather_humidity_label">Humedad</string>
+    <string name="weather_wind_label">Viento</string>
+
+    <!-- Frases del Clima -->
+    <string name="weather_phrase_hot">¡Hace calor! Asegúrate de regar tus plantas hoy.</string>
+    <string name="weather_phrase_cold">Hace frío. Protege tus cultivos más sensibles.</string>
+    <string name="weather_phrase_windy">Mucho viento. Revisa que tus soportes estén firmes.</string>
+    <string name="weather_phrase_rainy">Está lloviendo. ¡Buen día para ahorrar agua!</string>
+    <string name="weather_phrase_perfect">Clima perfecto para trabajar en el huerto.</string>
 
     <!-- Gestión Bancales -->
     <string name="bancales_title">Mis Bancales</string>

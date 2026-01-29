@@ -68,6 +68,15 @@
     <string name="weather_showers">Showers</string>
     <string name="weather_storm">Storm</string>
     <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_humidity_label">Humidity</string>
+    <string name="weather_wind_label">Wind</string>
+
+    <!-- Weather Phrases -->
+    <string name="weather_phrase_hot">It\'s hot! Make sure to water your plants today.</string>
+    <string name="weather_phrase_cold">It\'s cold. Protect your most sensitive crops.</string>
+    <string name="weather_phrase_windy">Very windy. Check that your supports are firm.</string>
+    <string name="weather_phrase_rainy">It\'s raining. Great day to save water!</string>
+    <string name="weather_phrase_perfect">Perfect weather to work in the garden.</string>
 
     <!-- Garden Beds Management -->
     <string name="bancales_title">My Garden Beds</string>

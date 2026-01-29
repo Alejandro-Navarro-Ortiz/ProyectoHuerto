@@ -21,12 +21,14 @@ class WeatherRepository {
             val response: WeatherResponse = httpClient.get("https://api.open-meteo.com/v1/forecast") {
                 parameter("latitude", lat)
                 parameter("longitude", lon)
-                parameter("current_weather", true)
+                parameter("current", "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m")
             }.body()
             
             WeatherState.Success(
-                temperature = response.currentWeather.temperature,
-                weatherCode = response.currentWeather.weatherCode
+                temperature = response.current.temperature,
+                weatherCode = response.current.weatherCode,
+                humidity = response.current.humidity,
+                windSpeed = response.current.windSpeed
             )
         } catch (e: Exception) {
             WeatherState.Error("No se pudo obtener el clima: ${e.message}")

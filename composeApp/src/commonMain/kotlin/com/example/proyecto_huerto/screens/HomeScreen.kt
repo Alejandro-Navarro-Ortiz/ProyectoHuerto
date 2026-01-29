@@ -1,7 +1,6 @@
 package com.example.proyecto_huerto.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyecto_huerto.weather.WeatherState
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import proyectohuerto.composeapp.generated.resources.*
 
@@ -24,15 +24,14 @@ import proyectohuerto.composeapp.generated.resources.*
  * Representa una opción de navegación en el menú principal.
  */
 data class HomeOption(
-    val titleKey: org.jetbrains.compose.resources.StringResource,
+    val titleKey: StringResource,
     val icon: ImageVector,
     val route: String,
-    val descriptionKey: org.jetbrains.compose.resources.StringResource
+    val descriptionKey: StringResource
 )
 
 /**
  * Pantalla principal de la aplicación.
- * Ofrece acceso rápido a los servicios del huerto y muestra la actividad reciente.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +41,6 @@ fun HomeScreen(
     onNavigate: (String) -> Unit,
     onRefreshWeather: () -> Unit
 ) {
-    // Definición de las opciones del menú principal
     val navOptions = listOf(
         HomeOption(Res.string.home_bancales_title, Icons.Filled.Yard, "gestion_bancales", Res.string.home_bancales_desc),
         HomeOption(Res.string.home_diario_title, Icons.Filled.Book, "diario_cultivo", Res.string.home_diario_desc),
@@ -68,10 +66,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { onNavigate("profile") },
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
+                    IconButton(onClick = { onNavigate("profile") }) {
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
                             color = MaterialTheme.colorScheme.primaryContainer
@@ -85,22 +80,15 @@ fun HomeScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                windowInsets = WindowInsets.statusBars
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Widget del Clima
             item {
                 WeatherWidget(state = weatherState, onRefresh = onRefreshWeather)
             }
@@ -113,7 +101,6 @@ fun HomeScreen(
                 )
             }
 
-            // Cuadrícula de servicios (2x2)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -127,7 +114,6 @@ fun HomeScreen(
                 }
             }
 
-            // Tarjeta destacada: Consejo del día
             item {
                 Card(
                     onClick = { onNavigate("consejos") },
@@ -148,7 +134,6 @@ fun HomeScreen(
                 }
             }
 
-            // Sección de Actividad Reciente
             if (recentActivities.isNotEmpty()) {
                 item {
                     Text(
@@ -174,17 +159,12 @@ fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
         ),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             when (state) {
                 is WeatherState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp).align(Alignment.Center),
-                        strokeWidth = 2.dp
-                    )
+                    Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
                 }
                 is WeatherState.Success -> {
                     Row(
@@ -196,14 +176,14 @@ fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
                             Icon(
                                 imageVector = getWeatherIcon(state.weatherCode),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(40.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.width(16.dp))
                             Column {
                                 Text(
                                     text = "${state.temperature}°C",
-                                    style = MaterialTheme.typography.headlineSmall,
+                                    style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
@@ -214,37 +194,66 @@ fun WeatherWidget(state: WeatherState, onRefresh: () -> Unit) {
                             }
                         }
                         IconButton(onClick = onRefresh) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = stringResource(Res.string.weather_refresh),
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Icon(Icons.Default.Refresh, stringResource(Res.string.weather_refresh), modifier = Modifier.size(24.dp))
                         }
                     }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        WeatherDetailItem(Icons.Default.WaterDrop, "${stringResource(Res.string.weather_humidity_label)}: ${state.humidity}%")
+                        WeatherDetailItem(Icons.Default.Air, "${stringResource(Res.string.weather_wind_label)}: ${state.windSpeed} km/h")
+                    }
+                    
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    
+                    Text(
+                        text = stringResource(getWeatherPhrase(state)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
                 is WeatherState.Error -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = stringResource(Res.string.weather_error),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Text(stringResource(Res.string.weather_error), color = MaterialTheme.colorScheme.error)
                         IconButton(onClick = onRefresh) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = stringResource(Res.string.weather_retry),
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                            Icon(Icons.Default.Refresh, stringResource(Res.string.weather_retry), tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun WeatherDetailItem(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(4.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+fun getWeatherPhrase(state: WeatherState.Success): StringResource {
+    return when {
+        state.temperature > 30 -> Res.string.weather_phrase_hot
+        state.temperature < 10 -> Res.string.weather_phrase_cold
+        state.windSpeed > 30 -> Res.string.weather_phrase_windy
+        state.weatherCode in listOf(51, 53, 55, 61, 63, 65, 80, 81, 82) -> Res.string.weather_phrase_rainy
+        else -> Res.string.weather_phrase_perfect
     }
 }
 
@@ -260,7 +269,7 @@ fun getWeatherIcon(code: Int): ImageVector {
     }
 }
 
-fun getWeatherDescription(code: Int): org.jetbrains.compose.resources.StringResource {
+fun getWeatherDescription(code: Int): StringResource {
     return when (code) {
         0 -> Res.string.weather_sunny
         1, 2, 3 -> Res.string.weather_cloudy_part
@@ -274,16 +283,12 @@ fun getWeatherDescription(code: Int): org.jetbrains.compose.resources.StringReso
     }
 }
 
-/**
- * Tarjeta individual para cada servicio principal.
- */
 @Composable
 fun HomeServiceCard(option: HomeOption, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = modifier.height(140.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
@@ -309,9 +314,6 @@ fun HomeServiceCard(option: HomeOption, modifier: Modifier = Modifier, onClick: 
     }
 }
 
-/**
- * Elemento de la línea de tiempo para la actividad reciente.
- */
 @Composable
 fun TimelineActivityItem(text: String) {
     Row(
@@ -320,16 +322,10 @@ fun TimelineActivityItem(text: String) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
+                modifier = Modifier.size(12.dp).clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.colorScheme.primary)
             )
             Box(
-                modifier = Modifier
-                    .width(2.dp)
-                    .height(40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                modifier = Modifier.width(2.dp).height(40.dp).background(MaterialTheme.colorScheme.surfaceVariant)
             )
         }
         Spacer(Modifier.width(16.dp))
@@ -337,11 +333,7 @@ fun TimelineActivityItem(text: String) {
             modifier = Modifier.weight(1f),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
-            Text(
-                text = text,
-                modifier = Modifier.padding(12.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Text(text = text, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
