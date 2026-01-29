@@ -115,12 +115,17 @@ class BancalViewModel(
         viewModelScope.launch {
             try {
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
+                val ahora = getCurrentInstant()
+
+                // CORRECCIÓN: fechaPlantado toma el valor actual y ultimoRiego se queda en null
                 val nuevoCultivo = Cultivo(
-                    hortalizaId = hortaliza.nombre, // ESENCIAL: Guardar el ID para recuperarlo
+                    hortalizaId = hortaliza.nombre,
                     nombreHortaliza = hortaliza.nombreMostrado,
                     frecuenciaRiegoDias = 2,
-                    ultimoRiego = getCurrentInstant()
+                    fechaPlantado = ahora,   // Se registra el momento de la siembra
+                    ultimoRiego = null       // Todavía no se ha regado
                 )
+
                 posiciones.forEach { nuevosCultivos[it] = nuevoCultivo }
                 val bancalActualizado = bancal.copy(cultivos = nuevosCultivos)
                 db.collection("usuarios").document(user.uid).collection("bancales")

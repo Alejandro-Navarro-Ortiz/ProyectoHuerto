@@ -78,7 +78,7 @@ fun AppNavHost(
         )
         val diarioViewModel: DiarioViewModel = viewModel<DiarioViewModel>()
         val huertoViewModel: HuertoViewModel = viewModel<HuertoViewModel>()
-        
+
         val weatherViewModel: WeatherViewModel = viewModel(
             factory = GenericViewModelFactory {
                 WeatherViewModel(
@@ -93,7 +93,7 @@ fun AppNavHost(
         ) { permissions ->
             val notificationsGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
             val locationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-            
+
             if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Toast.makeText(context, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
             }
@@ -113,7 +113,7 @@ fun AppNavHost(
                 permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
                 permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
             }
-            
+
             if (permissionsToRequest.isNotEmpty()) {
                 permissionLauncher.launch(permissionsToRequest.toTypedArray())
             }
@@ -278,6 +278,7 @@ fun AppNavHost(
                     hortalizasState = hortalizasState,
                     bancalId = bancalId,
                     currentLanguage = currentLanguage,
+                    onBack = { navController.popBackStack() }, // Implementación de la navegación hacia atrás
                     onUpdateCultivos = { posiciones, nombreHortaliza ->
                         val bancal = bancalViewModel.getBancalById(bancalId ?: "")
                         val hortaliza = (hortalizasState as? HuertoUiState.Success)?.data?.find { it.nombre == nombreHortaliza }
