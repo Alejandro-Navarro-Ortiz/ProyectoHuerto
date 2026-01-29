@@ -11,20 +11,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,39 +19,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Science
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -178,8 +135,6 @@ private fun DetalleBancalContent(
             }
 
             val enModoSeleccion = posicionesSeleccionadas.isNotEmpty()
-            val todasVacias = enModoSeleccion && posicionesSeleccionadas.all { bancal.cultivos[it] == null }
-            val todasOcupadas = enModoSeleccion && posicionesSeleccionadas.all { bancal.cultivos[it] != null }
 
             Scaffold(
                 topBar = {
@@ -187,10 +142,7 @@ private fun DetalleBancalContent(
                         title = { Text(bancal.nombre, fontWeight = FontWeight.Bold) },
                         navigationIcon = {
                             IconButton(onClick = onBack) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Volver"
-                                )
+                                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -202,11 +154,14 @@ private fun DetalleBancalContent(
                 },
                 floatingActionButton = {
                     AnimatedVisibility(
-                        visible = enModoSeleccion,
+                        visible = posicionesSeleccionadas.isNotEmpty(),
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
                         Column(horizontalAlignment = Alignment.End) {
+                            val todasOcupadas = posicionesSeleccionadas.all { bancal.cultivos[it] != null }
+                            val todasVacias = posicionesSeleccionadas.all { bancal.cultivos[it] == null }
+
                             if (todasOcupadas) {
                                 ExtendedFloatingActionButton(
                                     onClick = { dialogState = DialogState.Harvesting },
@@ -284,7 +239,10 @@ private fun DetalleBancalContent(
                                 language = currentLanguage,
                                 onClick = {
                                     if (enModoSeleccion) {
+                                        val todasVacias = posicionesSeleccionadas.all { bancal.cultivos[it] == null }
+                                        val todasOcupadas = posicionesSeleccionadas.all { bancal.cultivos[it] != null }
                                         val esMismoTipo = (todasVacias && cultivo == null) || (todasOcupadas && cultivo != null)
+
                                         if (isSelected) {
                                             posicionesSeleccionadas = posicionesSeleccionadas - posicion
                                         } else if (esMismoTipo) {
@@ -414,44 +372,41 @@ private fun CultivoInfoDialog(
     language: String,
     onDismiss: () -> Unit
 ) {
-    // 1. Obtenemos la zona horaria del sistema de forma explícita
-    val systemTZ = TimeZone.currentSystemDefault()
+    val systemTZ = TimeZone.of("UTC+1") // Forzado para corregir desfase
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cerrar") }
+            TextButton(onClick = onDismiss) { Text("Cerrar", color = Color(0xFF98FB98)) }
         },
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(hortaliza.icono, fontSize = 32.sp)
                 Spacer(Modifier.width(12.dp))
-                Text(hortaliza.nombreEnIdiomaActual(language))
+                Text(hortaliza.nombreEnIdiomaActual(language), color = Color.White)
             }
         },
+        containerColor = Color(0xFF2C2C2E),
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                HorizontalDivider(thickness = 0.5.dp)
+                HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
 
-                // 2. Mostramos la fecha de plantado con la hora corregida
                 InfoItem(
                     icon = Icons.Default.CalendarMonth,
                     label = "Plantado el",
                     value = cultivo.fechaPlantado?.let { instant ->
-                        // Forzamos la conversión al tiempo local del sistema
                         val localDateTime = instant.toLocalDateTime(systemTZ)
                         "${localDateTime.dayOfMonth}/${localDateTime.monthNumber}/${localDateTime.year} a las ${localDateTime.hour}:${localDateTime.minute.toString().padStart(2, '0')}"
                     } ?: "N/A"
                 )
 
-                // 3. Mostramos el último riego (si es null saldrá "Nunca")
                 InfoItem(
                     icon = Icons.Default.WaterDrop,
                     label = "Último riego",
                     value = cultivo.ultimoRiego?.let { instant ->
                         val localDateTime = instant.toLocalDateTime(systemTZ)
                         "${localDateTime.dayOfMonth}/${localDateTime.monthNumber} a las ${localDateTime.hour}:${localDateTime.minute.toString().padStart(2, '0')}"
-                    } ?: "Nunca" // Como pediste, si no se ha regado sale "Nunca"
+                    } ?: "Nunca"
                 )
 
                 InfoItem(
@@ -462,14 +417,14 @@ private fun CultivoInfoDialog(
 
                 if (cultivo.necesitaRiego) {
                     Surface(
-                        color = MaterialTheme.colorScheme.errorContainer,
+                        color = Color(0xFFB22222),
                         shape = MaterialTheme.shapes.small,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Warning, null, tint = Color.White, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("¡Necesita agua!", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
+                            Text("¡Necesita agua!", style = MaterialTheme.typography.labelMedium, color = Color.White)
                         }
                     }
                 }

@@ -10,7 +10,9 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
@@ -36,6 +38,7 @@ import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
 import com.example.proyecto_huerto.weather.WeatherRepository
 import com.example.proyecto_huerto.weather.WeatherViewModel
+import com.google.type.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -327,7 +330,10 @@ fun AppNavHost(
             }
 
             composable("diario_cultivo") {
-                DiarioScreen(viewModel = diarioViewModel, onBack = { navController.popBackStack() })
+                DiarioScreen(
+                    viewModel = diarioViewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
 
             composable("guia_hortalizas") {

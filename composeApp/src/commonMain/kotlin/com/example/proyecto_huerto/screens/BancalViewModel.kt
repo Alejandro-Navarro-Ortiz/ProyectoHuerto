@@ -21,7 +21,6 @@ import kotlin.collections.forEach
 
 /**
  * ViewModel encargado de la gestión de los bancales y cultivos.
- * Maneja la lógica de negocio, la sincronización con Firestore y las notificaciones de riego.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class BancalViewModel(
@@ -30,11 +29,16 @@ class BancalViewModel(
     private val _bancales = MutableStateFlow<List<Bancal>>(emptyList())
     val bancales = _bancales.asStateFlow()
 
+    // AÑADIDO: Estado para las actividades dentro de este ViewModel
+    private val _actividades = MutableStateFlow<List<Actividad>>(emptyList())
+    val actividades = _actividades.asStateFlow()
+
     private val db = Firebase.firestore
     private val auth = Firebase.auth
 
     init {
         listenToBancales()
+        listenToActividades() // AÑADIDO: Empezar a escuchar actividades al iniciar
         saveNotificationToken()
     }
 
@@ -63,7 +67,7 @@ class BancalViewModel(
                     flowOf(null)
                 }
             }.catch { e ->
-                println("ERROR FIRESTORE: ${e.message}")
+                println("ERROR FIRESTORE BANCALES: ${e.message}")
             }.collect { snapshot ->
                 if (snapshot != null) {
                     _bancales.value = snapshot.documents.mapNotNull { doc ->
@@ -75,6 +79,34 @@ class BancalViewModel(
                     }
                 } else {
                     _bancales.value = emptyList()
+                }
+            }
+        }
+    }
+
+    // AÑADIDO: Función esencial para que el Diario tenga IDs para borrar
+    private fun listenToActividades() {
+        viewModelScope.launch {
+            auth.authStateChanged.flatMapLatest { user ->
+                if (user != null) {
+                    db.collection("usuarios").document(user.uid).collection("actividades").snapshots
+                } else {
+                    flowOf(null)
+                }
+            }.catch { e ->
+                println("ERROR FIRESTORE ACTIVIDADES: ${e.message}")
+            }.collect { snapshot ->
+                if (snapshot != null) {
+                    _actividades.value = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            // ESENCIAL: Asignamos el ID del documento de Firebase al objeto Actividad
+                            doc.data<Actividad>().copy(id = doc.id)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                } else {
+                    _actividades.value = emptyList()
                 }
             }
         }
@@ -117,13 +149,12 @@ class BancalViewModel(
                 val nuevosCultivos = bancal.cultivos.toMutableMap()
                 val ahora = getCurrentInstant()
 
-                // CORRECCIÓN: fechaPlantado toma el valor actual y ultimoRiego se queda en null
                 val nuevoCultivo = Cultivo(
                     hortalizaId = hortaliza.nombre,
                     nombreHortaliza = hortaliza.nombreMostrado,
                     frecuenciaRiegoDias = 2,
-                    fechaPlantado = ahora,   // Se registra el momento de la siembra
-                    ultimoRiego = null       // Todavía no se ha regado
+                    fechaPlantado = ahora,
+                    ultimoRiego = null
                 )
 
                 posiciones.forEach { nuevosCultivos[it] = nuevoCultivo }
@@ -140,6 +171,21 @@ class BancalViewModel(
                 )
             } catch (e: Exception) {
                 println("ERROR SIEMBRA: ${e.message}")
+            }
+        }
+    }
+
+    // MEJORADO: Ahora borra usando la ruta correcta
+    fun deleteActividad(actividadId: String) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                db.collection("usuarios").document(user.uid)
+                    .collection("actividades")
+                    .document(actividadId)
+                    .delete()
+            } catch (e: Exception) {
+                println("Error al eliminar actividad: ${e.message}")
             }
         }
     }

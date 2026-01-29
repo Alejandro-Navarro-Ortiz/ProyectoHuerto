@@ -1,9 +1,11 @@
 package com.example.proyecto_huerto.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -65,7 +67,6 @@ fun DiarioScreen(
         val tareasDelDia = tareas.filter { isSameDay(it.fecha, selectedDate) }
         val actividadesDelDia = actividades.filter { isSameDay(it.fecha, selectedDate) }
 
-        // Usamos una sola LazyColumn para que el calendario también haga scroll
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -102,7 +103,10 @@ fun DiarioScreen(
                 }
                 items(actividadesDelDia) { actividad ->
                     Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        ActividadItem(actividad)
+                        ActividadItem(
+                            actividad = actividad,
+                            onDelete = { id -> viewModel.deleteActividad(id) }
+                        )
                     }
                 }
             }
@@ -154,7 +158,7 @@ fun DiarioScreen(
                 }
             } else {
                 item {
-                    Spacer(Modifier.height(80.dp)) // Espacio para no tapar el último item con el FAB
+                    Spacer(Modifier.height(80.dp))
                 }
             }
         }
@@ -172,50 +176,69 @@ fun DiarioScreen(
 }
 
 @Composable
-fun ActividadItem(actividad: Actividad) {
-    val icon = when (actividad.tipo) {
-        TipoActividad.RIEGO -> Icons.Default.WaterDrop
-        TipoActividad.SIEMBRA -> Icons.Default.Grass
-        else -> Icons.Default.History
+fun ActividadItem(
+    actividad: Actividad,
+    onDelete: (String) -> Unit
+) {
+    val (icon, color) = when (actividad.tipo) {
+        TipoActividad.RIEGO -> Icons.Default.WaterDrop to Color(0xFF2196F3)
+        TipoActividad.SIEMBRA -> Icons.Default.Grass to Color(0xFF4CAF50)
+        TipoActividad.ABONADO -> Icons.Default.Science to Color(0xFFFF9800)
+        TipoActividad.COSECHA -> Icons.Default.Agriculture to Color(0xFF9C27B0)
+        else -> Icons.Default.History to Color(0xFF757575)
     }
-    val color = if (actividad.tipo == TipoActividad.RIEGO) Color(0xFF2196F3) else Color(0xFF4CAF50)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f))
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Surface(
-                shape = MaterialTheme.shapes.small,
-                color = color.copy(alpha = 0.1f)
+                shape = CircleShape,
+                color = color.copy(alpha = 0.1f),
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.padding(8.dp).size(20.dp)
+                    modifier = Modifier.padding(10.dp)
                 )
             }
+
             Spacer(Modifier.width(16.dp))
-            Column {
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     actividad.tipo.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 11.sp,
                     color = color,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.2.sp
                 )
                 Text(
                     "Bancal: ${actividad.nombreBancal}",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     actividad.detalle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            IconButton(onClick = { onDelete(actividad.id) }) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Borrar",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

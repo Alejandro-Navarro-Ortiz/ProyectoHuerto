@@ -38,10 +38,27 @@ class DiarioViewModel : ViewModel() {
                 }
             }.collect { snapshot ->
                 if (snapshot != null) {
-                    _actividades.value = snapshot.documents.map { it.data<Actividad>() }
+                    // CORRECCIÓN: Asignamos el ID del documento de Firebase a la actividad
+                    _actividades.value = snapshot.documents.map { doc ->
+                        doc.data<Actividad>().copy(id = doc.id)
+                    }
                 } else {
                     _actividades.value = emptyList()
                 }
+            }
+        }
+    }
+
+    // NUEVA FUNCIÓN: Borrado de actividades directamente desde este ViewModel
+    fun deleteActividad(actividadId: String) {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                db.collection("usuarios").document(user.uid).collection("actividades")
+                    .document(actividadId)
+                    .delete()
+            } catch (e: Exception) {
+                println("Error al eliminar actividad: ${e.message}")
             }
         }
     }
