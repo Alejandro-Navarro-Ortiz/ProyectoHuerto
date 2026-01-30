@@ -9,5 +9,6 @@ data class Tarea(
     val descripcion: String = "",
     val fecha: Long = 0L, // Timestamp en milisegundos
     val completada: Boolean = false,
-    val tipo: String = "OTRA" // RIEGO, SIEMBRA, COSECHA, TRATAMIENTO, OTRA
+    val tipo: String = "OTRA", // RIEGO, SIEMBRA, COSECHA, TRATAMIENTO, OTRA
+    val imageUrl: String? = null
 )

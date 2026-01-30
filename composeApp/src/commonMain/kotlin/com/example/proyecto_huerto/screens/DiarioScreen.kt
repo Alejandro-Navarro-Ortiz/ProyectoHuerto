@@ -1,27 +1,42 @@
 package com.example.proyecto_huerto.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.proyecto_huerto.models.Tarea
 import com.example.proyecto_huerto.models.Actividad
+import com.example.proyecto_huerto.models.Tarea
 import com.example.proyecto_huerto.models.TipoActividad
 import com.example.proyecto_huerto.util.getCurrentEpochMillis
+import com.example.proyecto_huerto.util.rememberImagePicker
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -37,6 +52,7 @@ fun DiarioScreen(
 ) {
     val tareas by viewModel.tareas.collectAsState()
     val actividades by viewModel.actividades.collectAsState()
+    val isUploading by viewModel.isUploading.collectAsState()
     val datePickerState = rememberDatePickerState()
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -166,9 +182,10 @@ fun DiarioScreen(
 
     if (showAddDialog) {
         AddTareaDialog(
+            isUploading = isUploading,
             onDismiss = { showAddDialog = false },
-            onConfirm = { titulo, descripcion, tipo ->
-                viewModel.addTarea(titulo, descripcion, selectedDate, tipo)
+            onConfirm = { titulo, descripcion, tipo, imageData ->
+                viewModel.addTarea(titulo, descripcion, selectedDate, tipo, imageData)
                 showAddDialog = false
             }
         )
@@ -254,87 +271,156 @@ fun TareaItem(tarea: Tarea, onToggleCompletada: () -> Unit, onDelete: () -> Unit
             containerColor = if (tarea.completada) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
         )
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = tarea.completada,
-                onCheckedChange = { onToggleCompletada() },
-                colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
-            )
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                Text(
-                    tarea.titulo,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (tarea.completada) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = tarea.completada,
+                    onCheckedChange = { onToggleCompletada() },
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
-                if (tarea.descripcion.isNotBlank()) {
+                Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
                     Text(
-                        tarea.descripcion,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        tarea.titulo,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (tarea.completada) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                     )
+                    if (tarea.descripcion.isNotBlank()) {
+                        Text(
+                            tarea.descripcion,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
                 }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+
+            if (tarea.imageUrl != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                KamelImage(
+                    resource = asyncPainterResource(data = tarea.imageUrl),
+                    contentDescription = "Imagen de la tarea",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop,
+                    onLoading = { CircularProgressIndicator(modifier = Modifier.align(Alignment.Center)) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun AddTareaDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
+fun AddTareaDialog(
+    isUploading: Boolean,
+    onDismiss: () -> Unit, 
+    onConfirm: (String, String, String, ByteArray?) -> Unit
+) {
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     val tipos = listOf("RIEGO", "SIEMBRA", "COSECHA", "TRATAMIENTO", "OTRA")
     var tipoSeleccionado by remember { mutableStateOf(tipos[0]) }
+    var imageData by remember { mutableStateOf<ByteArray?>(null) }
+
+    val imagePicker = rememberImagePicker { bytes ->
+        imageData = bytes
+    }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isUploading) onDismiss() },
         title = { Text("Nueva Tarea", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = titulo,
-                    onValueChange = { titulo = it },
-                    label = { Text("Título") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = { descripcion = it },
-                    label = { Text("Descripción") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text("Tipo de tarea:", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Box(contentAlignment = Alignment.Center) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = titulo,
+                        onValueChange = { titulo = it },
+                        label = { Text("Título") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isUploading
+                    )
+                    OutlinedTextField(
+                        value = descripcion,
+                        onValueChange = { descripcion = it },
+                        label = { Text("Descripción") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isUploading
+                    )
 
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    tipos.forEach { tipo ->
+                    if (imageData != null) {
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { tipoSeleccionado = tipo }
-                                .padding(vertical = 4.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            RadioButton(selected = (tipo == tipoSeleccionado), onClick = { tipoSeleccionado = tipo })
-                            Text(text = tipo, modifier = Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
+                            Text("1 imagen seleccionada", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            IconButton(onClick = { imageData = null }, enabled = !isUploading) {
+                                Icon(Icons.Default.Clear, contentDescription = "Quitar imagen")
+                            }
                         }
+                    } else {
+                        OutlinedButton(
+                            onClick = { imagePicker.launch() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isUploading
+                        ) {
+                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Añadir Imagen")
+                        }
+                    }
+
+                    Text("Tipo de tarea:", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        tipos.forEach { tipo ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !isUploading) { tipoSeleccionado = tipo }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                RadioButton(
+                                    selected = (tipo == tipoSeleccionado),
+                                    onClick = { tipoSeleccionado = tipo },
+                                    enabled = !isUploading
+                                )
+                                Text(text = tipo, modifier = Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+
+                if (isUploading) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                            .clickable(enabled = false, onClick = {}),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
                     }
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = { if (titulo.isNotBlank()) onConfirm(titulo, descripcion, tipoSeleccionado) },
-                enabled = titulo.isNotBlank()
+                onClick = { if (titulo.isNotBlank()) onConfirm(titulo, descripcion, tipoSeleccionado, imageData) },
+                enabled = titulo.isNotBlank() && !isUploading
             ) {
                 Text("Añadir")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss, enabled = !isUploading) { Text("Cancelar") }
         }
     )
 }
