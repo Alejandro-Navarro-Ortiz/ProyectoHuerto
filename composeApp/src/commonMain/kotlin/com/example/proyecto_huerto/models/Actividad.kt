@@ -13,7 +13,9 @@ data class Actividad(
     val fecha: Long, // Marca de tiempo (Epoch Millis) de cuándo ocurrió
     val nombreBancal: String, // Nombre del bancal donde se realizó la acción
     val detalle: String, // Texto descriptivo (ej: "Se usó jabón potásico" o "Variedad Cherry")
-    val usuarioId: String = "" // Referencia al UID del usuario propietario del registro
+    val usuarioId: String = "", // Referencia al UID del usuario propietario del registro
+    // NUEVO: Campo para registrar la cantidad de acciones en un solo evento (ej. regar 5 plantas).
+    val cantidad: Int = 1
 )
 
 /**

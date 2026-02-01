@@ -2,10 +2,10 @@ package com.example.proyecto_huerto.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.proyecto_huerto.models.Actividad
 import com.example.proyecto_huerto.models.Bancal
 import com.example.proyecto_huerto.models.Cultivo
 import com.example.proyecto_huerto.models.Hortaliza
-import com.example.proyecto_huerto.models.Actividad
 import com.example.proyecto_huerto.models.TipoActividad
 import com.example.proyecto_huerto.notifications.NotificationScheduler
 import com.example.proyecto_huerto.util.getCurrentEpochMillis
@@ -17,11 +17,14 @@ import dev.gitlive.firebase.messaging.messaging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlin.collections.forEach
 
-/**
- * ViewModel encargado de la gestión de los bancales y cultivos.
- */
+data class BancalStats(
+    val plantasActuales: Int = 0,
+    val riegos: Int = 0,
+    val abonados: Int = 0,
+    val cosechas: Int = 0
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class BancalViewModel(
     private val notificationScheduler: NotificationScheduler? = null
@@ -29,17 +32,28 @@ class BancalViewModel(
     private val _bancales = MutableStateFlow<List<Bancal>>(emptyList())
     val bancales = _bancales.asStateFlow()
 
-    // AÑADIDO: Estado para las actividades dentro de este ViewModel
     private val _actividades = MutableStateFlow<List<Actividad>>(emptyList())
-    val actividades = _actividades.asStateFlow()
 
     private val db = Firebase.firestore
     private val auth = Firebase.auth
 
     init {
         listenToBancales()
-        listenToActividades() // AÑADIDO: Empezar a escuchar actividades al iniciar
+        listenToActividades()
         saveNotificationToken()
+    }
+
+    fun getStatsForBancal(bancal: Bancal): BancalStats {
+        val bancalActividades = _actividades.value.filter { it.nombreBancal == bancal.nombre }
+
+        // CORREGIDO: Suma las cantidades en lugar de solo contar las actividades
+        val riegos = bancalActividades.filter { it.tipo == TipoActividad.RIEGO }.sumOf { it.cantidad }
+        val abonados = bancalActividades.filter { it.tipo == TipoActividad.ABONADO }.sumOf { it.cantidad }
+        val cosechas = bancalActividades.filter { it.tipo == TipoActividad.COSECHA }.sumOf { it.cantidad }
+
+        val plantasActuales = bancal.cultivos.size
+
+        return BancalStats(plantasActuales, riegos, abonados, cosechas)
     }
 
     private fun saveNotificationToken() {
@@ -84,7 +98,6 @@ class BancalViewModel(
         }
     }
 
-    // AÑADIDO: Función esencial para que el Diario tenga IDs para borrar
     private fun listenToActividades() {
         viewModelScope.launch {
             auth.authStateChanged.flatMapLatest { user ->
@@ -99,7 +112,6 @@ class BancalViewModel(
                 if (snapshot != null) {
                     _actividades.value = snapshot.documents.mapNotNull { doc ->
                         try {
-                            // ESENCIAL: Asignamos el ID del documento de Firebase al objeto Actividad
                             doc.data<Actividad>().copy(id = doc.id)
                         } catch (e: Exception) {
                             null
@@ -112,7 +124,8 @@ class BancalViewModel(
         }
     }
 
-    private fun registrarActividad(tipo: TipoActividad, nombreBancal: String, detalle: String) {
+    // CORREGIDO: Ahora acepta una cantidad
+    private fun registrarActividad(tipo: TipoActividad, nombreBancal: String, detalle: String, cantidad: Int = 1) {
         val user = auth.currentUser ?: return
         viewModelScope.launch {
             try {
@@ -121,7 +134,8 @@ class BancalViewModel(
                     fecha = getCurrentEpochMillis(),
                     nombreBancal = nombreBancal,
                     detalle = detalle,
-                    usuarioId = user.uid
+                    usuarioId = user.uid,
+                    cantidad = cantidad
                 )
                 db.collection("usuarios").document(user.uid).collection("actividades").add(actividad)
             } catch (e: Exception) {
@@ -167,25 +181,11 @@ class BancalViewModel(
                 registrarActividad(
                     tipo = TipoActividad.SIEMBRA,
                     nombreBancal = bancal.nombre,
-                    detalle = "Sembrado: $nombreHortalizaStr (${posiciones.size} celdas)"
+                    detalle = "Sembrado: $nombreHortalizaStr",
+                    cantidad = posiciones.size // CORREGIDO
                 )
             } catch (e: Exception) {
                 println("ERROR SIEMBRA: ${e.message}")
-            }
-        }
-    }
-
-    // MEJORADO: Ahora borra usando la ruta correcta
-    fun deleteActividad(actividadId: String) {
-        val user = auth.currentUser ?: return
-        viewModelScope.launch {
-            try {
-                db.collection("usuarios").document(user.uid)
-                    .collection("actividades")
-                    .document(actividadId)
-                    .delete()
-            } catch (e: Exception) {
-                println("Error al eliminar actividad: ${e.message}")
             }
         }
     }
@@ -216,7 +216,8 @@ class BancalViewModel(
                 registrarActividad(
                     tipo = TipoActividad.RIEGO,
                     nombreBancal = bancal.nombre,
-                    detalle = "Regadas ${posiciones.size} secciones"
+                    detalle = "Regadas ${posiciones.size} secciones",
+                    cantidad = posiciones.size // CORREGIDO
                 )
             } catch (e: Exception) {
                 println("ERROR RIEGO: ${e.message}")
@@ -231,7 +232,8 @@ class BancalViewModel(
                 registrarActividad(
                     tipo = TipoActividad.ABONADO,
                     nombreBancal = bancal.nombre,
-                    detalle = "Abonadas ${posiciones.size} secciones"
+                    detalle = "Abonadas ${posiciones.size} secciones",
+                    cantidad = posiciones.size // CORREGIDO
                 )
             } catch (e: Exception) {
                 println("ERROR ABONO: ${e.message}")
@@ -258,7 +260,8 @@ class BancalViewModel(
                 registrarActividad(
                     tipo = TipoActividad.COSECHA,
                     nombreBancal = bancal.nombre,
-                    detalle = "Cosechado: $nombresCosechados (${posiciones.size} celdas liberadas)"
+                    detalle = "Cosechado: $nombresCosechados",
+                    cantidad = posiciones.size // CORREGIDO
                 )
             } catch (e: Exception) {
                 println("ERROR COSECHA: ${e.message}")

@@ -10,9 +10,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
@@ -38,11 +36,11 @@ import com.example.proyecto_huerto.viewmodel.HuertoUiState
 import com.example.proyecto_huerto.viewmodel.HuertoViewModel
 import com.example.proyecto_huerto.weather.WeatherRepository
 import com.example.proyecto_huerto.weather.WeatherViewModel
-import com.google.type.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AppNavHost(
@@ -254,13 +252,10 @@ fun AppNavHost(
             }
 
             composable("gestion_bancales") {
-                val bancales by bancalViewModel.bancales.collectAsState()
                 GestionBancalesScreen(
-                    bancales = bancales,
-                    onAddBancal = { nombre, ancho, largo -> bancalViewModel.addBancal(nombre, ancho, largo) },
-                    onDeleteBancal = { bancalId -> bancalViewModel.deleteBancal(bancalId) },
-                    onNavigate = { route ->
-                        if (route == "Inicio") {
+                    viewModel = bancalViewModel,
+                    onNavigate = {
+                        if (it == "Inicio") {
                             navController.navigate("home") { popUpTo("home") { inclusive = true } }
                         }
                     },
@@ -387,19 +382,24 @@ fun AppNavHost(
             }
 
             composable("consejos") {
-                ConsejosScreen(onNavigate = { route -> navController.navigate(route) })
+                ConsejosScreen(
+                    onNavigate = { route ->
+                        if (route == "home") {
+                            navController.navigate(route) { popUpTo(route) { inclusive = true } }
+                        }
+                    }
+                )
             }
 
             composable("about") {
-                AboutScreen(onBack = { navController.popBackStack() })
+                AboutScreen { navController.popBackStack() }
             }
         }
     }
 }
 
-class GenericViewModelFactory<T : ViewModel>(private val creator: () -> T) : ViewModelProvider.Factory {
+class GenericViewModelFactory<T : ViewModel>(private val constructor: () -> T) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        @Suppress("UNCHECKED_CAST")
-        return creator() as T
+        return constructor() as T
     }
 }
